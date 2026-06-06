@@ -6,6 +6,7 @@ interface Props {
   onNew: () => void;
   onSelect: (id: string) => void;
   onDelete: (id: string) => void;
+  onScreen: () => void;
 }
 
 function LogoMark() {
@@ -70,7 +71,7 @@ function groupSessions(sessions: ChatSession[]) {
   return { today, yesterday, older };
 }
 
-export function Sidebar({ sessions, activeId, onNew, onSelect, onDelete }: Props) {
+export function Sidebar({ sessions, activeId, onNew, onSelect, onDelete, onScreen }: Props) {
   const groups = groupSessions(sessions);
 
   const renderGroup = (label: string, items: ChatSession[]) => {
@@ -113,11 +114,19 @@ export function Sidebar({ sessions, activeId, onNew, onSelect, onDelete }: Props
         </div>
       </div>
 
-      {/* new chat */}
+      {/* actions */}
       <div className="sb-top">
         <button className="sb-new-btn" onClick={onNew}>
           <PlusIcon />
           New Search
+        </button>
+        <button className="sb-screen-btn" onClick={onScreen}>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
+          </svg>
+          Screen Resume
         </button>
       </div>
 
