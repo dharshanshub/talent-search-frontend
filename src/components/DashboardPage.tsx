@@ -333,7 +333,7 @@ export function DashboardPage() {
                       onClick={() => handleViewResume(r.candidate_id)}
                     >
                       {resumeLoading[r.candidate_id] ? <SpinnerIcon /> : <EyeIcon />}
-                      {resumeLoading[r.candidate_id] ? "Loading…" : "View PDF"}
+                      {resumeLoading[r.candidate_id] ? "Loading…" : "View Resume"}
                     </button>
                     <button
                       className="dash-delete-btn"
