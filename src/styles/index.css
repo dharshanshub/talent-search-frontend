@@ -2127,7 +2127,7 @@ html, body, #root {
   flex: 1; overflow: auto; padding: 20px 32px 32px;
 }
 .dash-table {
-  width: 100%; border-collapse: collapse; font-size: 13.5px;
+  width: 100%; min-width: 860px; border-collapse: collapse; font-size: 13.5px;
   background: var(--bg-white); border-radius: var(--radius);
   overflow: hidden; box-shadow: var(--shadow-sm);
 }
@@ -2142,7 +2142,13 @@ html, body, #root {
 .dash-th-sortable:hover { background: var(--indigo-light); color: var(--indigo-dark); }
 .dash-th-sortable.sorted { color: var(--indigo-dark); background: var(--indigo-light); }
 .dash-th-num, .dash-td-num { width: 40px; color: var(--text-3); text-align: center; }
-.dash-th-action, .dash-td-action { width: 48px; text-align: center; }
+.dash-th-action {
+  position: sticky; right: 0;
+  background: var(--bg-subtle);
+  text-align: right;
+  box-shadow: -4px 0 10px -2px rgba(0,0,0,.07);
+  z-index: 1;
+}
 .sort-arrow { font-size: 10px; margin-left: 3px; }
 .sort-arrow.inactive { color: var(--text-3); }
 .sort-arrow.active   { color: var(--indigo); }
@@ -2172,7 +2178,15 @@ html, body, #root {
 }
 .dash-skill-more { font-size: 11px; color: var(--text-3); padding: 2px 4px; }
 
-.dash-td-action { display: flex; gap: 6px; align-items: center; }
+.dash-td-action {
+  position: sticky; right: 0;
+  display: flex; gap: 6px; align-items: center; justify-content: flex-end;
+  background: var(--bg-white);
+  box-shadow: -4px 0 10px -2px rgba(0,0,0,.05);
+  padding-left: 12px;
+  white-space: nowrap;
+}
+.dash-tr:hover .dash-td-action { background: var(--bg-subtle); }
 
 .dash-view-btn {
   display: inline-flex; align-items: center; gap: 5px;
