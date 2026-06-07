@@ -171,7 +171,9 @@ export interface KnowledgeBaseStats {
   avg_experience_years: number;
   last_added_at: string | null;
   top_skills: string[];
-  /** True when the pool exceeds 10 000 candidates and stats are from a sample. */
+  experience_distribution: Record<string, number>;
+  top_locations: string[];
+  top_industries: string[];
   is_sampled: boolean;
 }
 

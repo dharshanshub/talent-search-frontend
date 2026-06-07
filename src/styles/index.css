@@ -2083,6 +2083,12 @@ html, body, #root {
   background: var(--indigo-light); color: var(--indigo-dark);
   border: 1px solid var(--indigo-mid);
 }
+.dash-chip-loc {
+  background: #ecfdf5; color: #065f46; border-color: #a7f3d0;
+}
+.dash-chip-ind {
+  background: #fff7ed; color: #92400e; border-color: #fed7aa;
+}
 
 /* Controls */
 .dash-controls {

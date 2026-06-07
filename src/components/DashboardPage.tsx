@@ -8,9 +8,6 @@ import {
   type KnowledgeBaseStats,
 } from "../api/client";
 
-type SortCol = "name" | "title" | "seniority" | "location" | "years_experience" | "indexed_at";
-type SortDir = "asc" | "desc";
-
 const SENIORITY_ORDER: Record<string, number> = {
   Junior: 0, "Mid-Level": 1, Senior: 2, Staff: 3, Principal: 4,
 };
@@ -32,11 +29,6 @@ function formatDate(iso: string): string {
   } catch {
     return iso;
   }
-}
-
-function SortArrow({ col, active, dir }: { col: SortCol; active: SortCol; dir: SortDir }) {
-  if (col !== active) return <span className="sort-arrow inactive">↕</span>;
-  return <span className="sort-arrow active">{dir === "asc" ? "↑" : "↓"}</span>;
 }
 
 function StatCard({ label, value, sub }: { label: string; value: string | number; sub?: string }) {
@@ -88,8 +80,6 @@ export function DashboardPage() {
   const [serverTotal, setServerTotal] = useState(-1);
 
   // ── Table controls ────────────────────────────────────────────────────────
-  const [sortCol, setSortCol] = useState<SortCol>("indexed_at");
-  const [sortDir, setSortDir] = useState<SortDir>("desc");
   const [filterText, setFilterText] = useState("");
   const [filterSeniority, setFilterSeniority] = useState("All");
 
@@ -171,33 +161,15 @@ export function DashboardPage() {
     Promise.all([loadStats(), loadPage(null)]);
   }, [loadStats, loadPage]);
 
-  // ── Sort / filter on current page ─────────────────────────────────────────
-
-  const handleSort = (col: SortCol) => {
-    if (sortCol === col) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
-    else { setSortCol(col); setSortDir("asc"); }
-  };
-
+  // ── Filter on current page ────────────────────────────────────────────────
   const filtered = useMemo(() =>
-    records
-      .filter((r) => {
-        const txt = filterText.toLowerCase();
-        if (txt && !r.name.toLowerCase().includes(txt) && !r.title.toLowerCase().includes(txt)) return false;
-        if (filterSeniority !== "All" && r.seniority !== filterSeniority) return false;
-        return true;
-      })
-      .sort((a, b) => {
-        let av: string | number = a[sortCol];
-        let bv: string | number = b[sortCol];
-        if (sortCol === "seniority") {
-          av = SENIORITY_ORDER[av as string] ?? 99;
-          bv = SENIORITY_ORDER[bv as string] ?? 99;
-        }
-        if (av < bv) return sortDir === "asc" ? -1 : 1;
-        if (av > bv) return sortDir === "asc" ? 1 : -1;
-        return 0;
-      }),
-    [records, filterText, filterSeniority, sortCol, sortDir],
+    records.filter((r) => {
+      const txt = filterText.toLowerCase();
+      if (txt && !r.name.toLowerCase().includes(txt) && !r.title.toLowerCase().includes(txt)) return false;
+      if (filterSeniority !== "All" && r.seniority !== filterSeniority) return false;
+      return true;
+    }),
+    [records, filterText, filterSeniority],
   );
 
   // ── Delete ────────────────────────────────────────────────────────────────
@@ -301,11 +273,55 @@ export function DashboardPage() {
               ))}
             </div>
           </div>
+
+          {/* Experience range distribution */}
+          <div className="dash-stat-card dash-seniority-card">
+            <div className="dash-stat-label">Experience ranges</div>
+            <div className="dash-seniority-bars">
+              {Object.entries(stats.experience_distribution).map(([bucket, count]) => (
+                <div key={bucket} className="dash-seniority-row">
+                  <span className="dash-seniority-label">{bucket}</span>
+                  <div className="dash-seniority-bar-wrap">
+                    <div
+                      className="dash-seniority-bar-fill"
+                      style={{
+                        width: `${Math.round((count / stats.total_profiles) * 100)}%`,
+                        background: "#0ea5e9",
+                      }}
+                    />
+                  </div>
+                  <span className="dash-seniority-count">{count}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Top skills */}
           <div className="dash-stat-card">
             <div className="dash-stat-label">Top skills in pool</div>
             <div className="dash-top-skills">
               {stats.top_skills.slice(0, 8).map((skill) => (
                 <span key={skill} className="dash-skill-chip">{skill}</span>
+              ))}
+            </div>
+          </div>
+
+          {/* Top locations */}
+          <div className="dash-stat-card">
+            <div className="dash-stat-label">Top locations</div>
+            <div className="dash-top-skills">
+              {stats.top_locations.map((loc) => (
+                <span key={loc} className="dash-skill-chip dash-chip-loc">{loc}</span>
+              ))}
+            </div>
+          </div>
+
+          {/* Top industries */}
+          <div className="dash-stat-card">
+            <div className="dash-stat-label">Industries represented</div>
+            <div className="dash-top-skills">
+              {stats.top_industries.map((ind) => (
+                <span key={ind} className="dash-skill-chip dash-chip-ind">{ind}</span>
               ))}
             </div>
           </div>
@@ -356,13 +372,13 @@ export function DashboardPage() {
             <thead>
               <tr>
                 <th className="dash-th dash-th-num">#</th>
-                <Th col="name" active={sortCol} dir={sortDir} onSort={handleSort}>Name</Th>
-                <Th col="title" active={sortCol} dir={sortDir} onSort={handleSort}>Title</Th>
-                <Th col="location" active={sortCol} dir={sortDir} onSort={handleSort}>Location</Th>
-                <Th col="seniority" active={sortCol} dir={sortDir} onSort={handleSort}>Seniority</Th>
-                <Th col="years_experience" active={sortCol} dir={sortDir} onSort={handleSort}>Exp.</Th>
+                <th className="dash-th">Name</th>
+                <th className="dash-th">Title</th>
+                <th className="dash-th">Location</th>
+                <th className="dash-th">Seniority</th>
+                <th className="dash-th">Exp.</th>
                 <th className="dash-th">Top Skills</th>
-                <Th col="indexed_at" active={sortCol} dir={sortDir} onSort={handleSort}>Added</Th>
+                <th className="dash-th">Added</th>
                 <th className="dash-th dash-th-action">Actions</th>
               </tr>
             </thead>
@@ -477,22 +493,6 @@ export function DashboardPage() {
 }
 
 // ── Small helper components ───────────────────────────────────────────────────
-
-function Th({
-  col, active, dir, onSort, children,
-}: {
-  col: SortCol; active: SortCol; dir: SortDir;
-  onSort: (c: SortCol) => void; children: React.ReactNode;
-}) {
-  return (
-    <th
-      className={`dash-th dash-th-sortable${col === active ? " sorted" : ""}`}
-      onClick={() => onSort(col)}
-    >
-      {children} <SortArrow col={col} active={active} dir={dir} />
-    </th>
-  );
-}
 
 function EyeIcon() {
   return (
