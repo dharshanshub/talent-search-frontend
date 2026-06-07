@@ -1893,3 +1893,81 @@ html, body, #root {
   border-radius: 7px;
   text-align: center;
 }
+
+/* ── Markdown rendering inside assistant bubbles ─────────────────────────── */
+
+.bubble-assistant p { margin-bottom: 0.6em; line-height: 1.65; }
+.bubble-assistant p:last-child { margin-bottom: 0; }
+
+.bubble-assistant ul,
+.bubble-assistant ol {
+  padding-left: 1.4em;
+  margin-bottom: 0.6em;
+}
+.bubble-assistant li { margin-bottom: 0.25em; line-height: 1.6; }
+
+.bubble-assistant strong { font-weight: 600; }
+.bubble-assistant em    { font-style: italic; }
+
+.bubble-assistant code {
+  font-family: 'JetBrains Mono', 'Fira Mono', monospace;
+  font-size: 12.5px;
+  background: rgba(99,102,241,.08);
+  color: var(--indigo-dark);
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+.bubble-assistant pre {
+  background: #f1f5f9;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 14px;
+  overflow-x: auto;
+  margin: 8px 0;
+}
+.bubble-assistant pre code {
+  background: none;
+  padding: 0;
+  color: var(--text);
+  font-size: 12.5px;
+}
+
+/* Markdown tables — GFM */
+.bubble-assistant table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin: 10px 0 14px;
+  border-radius: 8px;
+  overflow: hidden;
+}
+.bubble-assistant th,
+.bubble-assistant td {
+  padding: 8px 12px;
+  text-align: left;
+  border: 1px solid var(--border);
+}
+.bubble-assistant th {
+  background: var(--indigo-light);
+  font-weight: 600;
+  color: var(--indigo-dark);
+  white-space: nowrap;
+}
+.bubble-assistant tr:nth-child(even) td { background: var(--bg-subtle); }
+.bubble-assistant tr:hover td { background: var(--indigo-light); }
+
+/* Streaming cursor blink */
+@keyframes cursor-blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0; }
+}
+.streaming-cursor {
+  display: inline-block;
+  width: 2px;
+  height: 1em;
+  background: var(--indigo);
+  margin-left: 2px;
+  vertical-align: text-bottom;
+  border-radius: 1px;
+  animation: cursor-blink 0.9s ease-in-out infinite;
+}

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import type { CandidateMatch } from "../api/client";
+import type { CandidateMatch, ConversationMessage } from "../api/client";
 import { CandidateCard } from "./CandidateCard";
 import { MessageBubble } from "./MessageBubble";
 import { ResumeDrawer } from "./ResumeDrawer";
@@ -14,10 +14,10 @@ interface Props {
 }
 
 const EXAMPLES = [
-  { tag: "Frontend",      text: "Senior React engineer in Berlin with fintech experience" },
-  { tag: "Data",          text: "Staff ML engineer PyTorch healthtech, 8+ years" },
-  { tag: "DevOps",        text: "DevOps engineer with Kubernetes and AWS, 5+ years" },
-  { tag: "Mobile",        text: "Mid-level Flutter developer based in Singapore" },
+  { tag: "Frontend",  text: "Senior React engineer in Berlin with fintech experience" },
+  { tag: "Data",      text: "Staff ML engineer PyTorch healthtech, 8+ years" },
+  { tag: "DevOps",    text: "DevOps engineer with Kubernetes and AWS, 5+ years" },
+  { tag: "Mobile",    text: "Mid-level Flutter developer based in Singapore" },
 ];
 
 function SearchIcon({ size = 30, color = "#6366f1" }: { size?: number; color?: string }) {
@@ -58,11 +58,19 @@ export function ChatWindow({ sessionId, initialMessages, onMessagesChange }: Pro
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
   const [input, setInput] = useState("");
   const [drawerCandidate, setDrawerCandidate] = useState<CandidateMatch | null>(null);
+
+  // Streaming state: partial text and candidates arriving before the stream completes
+  const [streamingText, setStreamingText] = useState<string | null>(null);
+  const [streamingCandidates, setStreamingCandidates] = useState<CandidateMatch[]>([]);
+
   const { loading, error, search } = useSearch();
+
   // Sync when switching sessions
   useEffect(() => {
     setMessages(initialMessages);
     setInput("");
+    setStreamingText(null);
+    setStreamingCandidates([]);
   }, [sessionId]);
 
   const push = (msgs: ChatMessage[]) => {
@@ -75,15 +83,36 @@ export function ChatWindow({ sessionId, initialMessages, onMessagesChange }: Pro
     if (!q || loading) return;
 
     setInput("");
+    setStreamingText("");
+    setStreamingCandidates([]);
+
     const withUser: ChatMessage[] = [...messages, { role: "user", content: q }];
     push(withUser);
 
-    const result = await search(q);
+    // Build conversation history for the agent (exclude candidate data — text only)
+    const history: ConversationMessage[] = withUser.slice(0, -1).map((m) => ({
+      role: m.role,
+      content: m.content,
+    }));
+
+    const result = await search(
+      q,
+      history,
+      (partial) => setStreamingText(partial),
+      (liveCandidates) => setStreamingCandidates(liveCandidates),
+    );
+
+    setStreamingText(null);
+    setStreamingCandidates([]);
 
     if (result) {
       push([
         ...withUser,
-        { role: "assistant", content: result.answer, candidates: result.candidates },
+        {
+          role: "assistant",
+          content: result.answer,
+          candidates: result.candidates.length > 0 ? result.candidates : undefined,
+        },
       ]);
     } else {
       push([
@@ -93,7 +122,17 @@ export function ChatWindow({ sessionId, initialMessages, onMessagesChange }: Pro
     }
   };
 
-  const isEmpty = messages.length === 0 && !loading;
+  // Candidates arrive via onCandidates SSE event before streaming text is done
+  // We surface them via the search hook's onCandidates callback, but since useSearch
+  // only exposes the final result we surface live candidates from the streaming text's
+  // accompanying candidates via a local handler exposed through a closure in run().
+  // For live candidate preview during stream we re-expose via the agent.py SSE ordering:
+  // candidates event always fires before deltas. So we capture them in useSearch itself.
+  // The current implementation captures them in `result.candidates` after done.
+  // For a live preview while text streams, we need to lift this — future enhancement.
+
+  const isEmpty = messages.length === 0 && !loading && streamingText === null;
+  const isStreaming = streamingText !== null;
 
   return (
     <div className="chat-pane">
@@ -184,7 +223,39 @@ export function ChatWindow({ sessionId, initialMessages, onMessagesChange }: Pro
                 )}
               </div>
             ))}
-            {loading && <TypingIndicator />}
+
+            {/* Live streaming message — shown while the stream is in progress */}
+            {isStreaming && (
+              <div>
+                {streamingText === "" ? (
+                  <TypingIndicator />
+                ) : (
+                  <MessageBubble
+                    role="assistant"
+                    content={streamingText}
+                    isStreaming
+                  />
+                )}
+                {streamingCandidates.length > 0 && (
+                  <div className="candidates-section">
+                    <div className="candidates-header">
+                      <span className="candidates-count">
+                        {streamingCandidates.length} candidate{streamingCandidates.length !== 1 ? "s" : ""} found
+                      </span>
+                      <div className="candidates-divider" />
+                    </div>
+                    {streamingCandidates.map((c, idx) => (
+                      <CandidateCard
+                        key={c.id}
+                        candidate={c}
+                        rank={idx + 1}
+                        onViewResume={setDrawerCandidate}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </>
         )}
       </div>
