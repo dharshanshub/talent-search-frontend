@@ -46,10 +46,12 @@ function FileIcon() {
   );
 }
 
+const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "";
+
 export function ResumeDrawer({ candidate, onClose }: Props) {
   const pct = Math.round(candidate.score * 100);
   const scheme = scoreScheme(candidate.score);
-  const resumeUrl = `/api/v1/candidates/${candidate.id}/resume`;
+  const resumeUrl = `${API_BASE}/api/v1/candidates/${candidate.id}/resume`;
   const downloadUrl = `${resumeUrl}?dl=1`;
 
   return (

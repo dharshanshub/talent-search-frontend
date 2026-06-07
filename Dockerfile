@@ -5,6 +5,11 @@ FROM node:22-alpine AS builder
 
 WORKDIR /app
 
+# VITE_API_BASE_URL is baked into the JS bundle at build time.
+# Pass it via --build-arg VITE_API_BASE_URL=https://<backend-url>
+ARG VITE_API_BASE_URL=""
+ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
+
 COPY package.json package-lock.json* ./
 RUN npm ci
 
@@ -29,7 +34,4 @@ RUN chown -R nginx:nginx /usr/share/nginx/html && \
 
 USER nginx
 
-EXPOSE 80
-
-HEALTHCHECK --interval=15s --timeout=5s --start-period=5s --retries=3 \
-    CMD wget -qO- http://localhost/ || exit 1
+EXPOSE 8080

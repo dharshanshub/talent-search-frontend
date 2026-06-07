@@ -10,6 +10,8 @@ export interface CandidateMatch {
   last_updated: string;
   score: number;
   summary: string | null;
+  /** Blob filename stored in Pinecone. Null for legacy seeded candidates. */
+  blob_filename: string | null;
 }
 
 export interface SearchResponse {
@@ -42,6 +44,9 @@ export interface ExtractedProfile {
 }
 
 export interface UploadResponse {
+  /** Generated at upload time — shared key for Blob Storage and Pinecone. */
+  candidate_id: string;
+  blob_filename: string;
   extracted: ExtractedProfile;
   raw_text: string;
 }
@@ -67,13 +72,20 @@ export async function uploadResume(file: File): Promise<UploadResponse> {
 }
 
 export async function indexCandidate(
+  candidateId: string,
+  blobFilename: string,
   profile: ExtractedProfile,
-  rawText: string
+  rawText: string,
 ): Promise<IndexResponse> {
   const response = await fetch(`${BASE_URL}/api/v1/candidates/index`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ profile, raw_text: rawText }),
+    body: JSON.stringify({
+      candidate_id: candidateId,
+      blob_filename: blobFilename,
+      profile,
+      raw_text: rawText,
+    }),
   });
   if (!response.ok) {
     const err: ApiError = await response.json();
@@ -91,11 +103,9 @@ export async function searchTalent(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ query, top_k: topK }),
   });
-
   if (!response.ok) {
     const err: ApiError = await response.json();
     throw new Error(err.message ?? "Search failed");
   }
-
   return response.json() as Promise<SearchResponse>;
 }
