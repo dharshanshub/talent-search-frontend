@@ -82,6 +82,9 @@ export function DashboardPage() {
   // ── Table controls ────────────────────────────────────────────────────────
   const [filterText, setFilterText] = useState("");
   const [filterSeniority, setFilterSeniority] = useState("All");
+  // True when records[] holds server-side search results (not a pagination page)
+  const [searchMode, setSearchMode] = useState(false);
+  const searchModeRef = useRef(false);
 
   // ── Delete + resume ───────────────────────────────────────────────────────
   const [deleteTarget, setDeleteTarget] = useState<CandidateRecord | null>(null);
@@ -90,6 +93,9 @@ export function DashboardPage() {
 
   // Guard against setting state after unmount
   const mounted = useRef(true);
+  useEffect(() => {
+    searchModeRef.current = searchMode;
+  }, [searchMode]);
   useEffect(() => { return () => { mounted.current = false; }; }, []);
 
   // ── Loaders ───────────────────────────────────────────────────────────────
@@ -128,6 +134,40 @@ export function DashboardPage() {
     }
   }, []);
 
+  const loadSearch = useCallback(async (term: string) => {
+    setPageLoading(true);
+    setError(null);
+    setSearchMode(true);
+    try {
+      // Fetch up to 500 matches — more than any realistic pool for this app
+      const page = await listCandidatesPage(null, 500, term);
+      if (!mounted.current) return;
+      setRecords(page.candidates);
+      setNextCursor(null);
+    } catch (err) {
+      if (!mounted.current) return;
+      setError(err instanceof Error ? err.message : "Search failed");
+    } finally {
+      if (mounted.current) setPageLoading(false);
+    }
+  }, []);
+
+  // Debounce filter input: wait 350 ms after typing stops before hitting the server.
+  // When text is cleared, immediately return to cursor-paginated browse.
+  useEffect(() => {
+    const term = filterText.trim();
+    if (!term) {
+      if (searchModeRef.current) {
+        setSearchMode(false);
+        setCursorStack([null]);
+        loadPage(null);
+      }
+      return;
+    }
+    const timer = setTimeout(() => loadSearch(term), 350);
+    return () => clearTimeout(timer);
+  }, [filterText, loadPage, loadSearch]);
+
   // Load stats + first page in parallel on mount
   useEffect(() => {
     Promise.all([loadStats(), loadPage(null)]);
@@ -161,15 +201,14 @@ export function DashboardPage() {
     Promise.all([loadStats(), loadPage(null)]);
   }, [loadStats, loadPage]);
 
-  // ── Filter on current page ────────────────────────────────────────────────
+  // Text search is server-side; seniority filter is still applied client-side
+  // since it's a cheap enum match on whatever records are currently loaded.
   const filtered = useMemo(() =>
     records.filter((r) => {
-      const txt = filterText.toLowerCase();
-      if (txt && !r.name.toLowerCase().includes(txt) && !r.title.toLowerCase().includes(txt)) return false;
       if (filterSeniority !== "All" && r.seniority !== filterSeniority) return false;
       return true;
     }),
-    [records, filterText, filterSeniority],
+    [records, filterSeniority],
   );
 
   // ── Delete ────────────────────────────────────────────────────────────────
@@ -207,12 +246,12 @@ export function DashboardPage() {
 
   // ── Pagination display helpers ─────────────────────────────────────────────
   const totalKnown = serverTotal >= 0;
-  const pageStart = (currentPage - 1) * PAGE_SIZE + 1;
+  const pageStart = searchMode ? 1 : (currentPage - 1) * PAGE_SIZE + 1;
   const pageEnd = pageStart + filtered.length - 1;
   const totalPages = totalKnown ? Math.ceil(serverTotal / PAGE_SIZE) : null;
   const seniorityOptions = ["All", "Junior", "Mid-Level", "Senior", "Staff", "Principal"];
 
-  const isFiltering = filterText !== "" || filterSeniority !== "All";
+  const isFiltering = searchMode || filterSeniority !== "All";
 
   return (
     <div className="dash-pane">
@@ -222,7 +261,9 @@ export function DashboardPage() {
         <div className="dash-header-left">
           <div className="dash-header-title">Knowledge Base</div>
           <div className="dash-header-sub">
-            {totalKnown
+            {searchMode
+              ? `Search results across all ${totalKnown ? serverTotal.toLocaleString() : ""} profiles`
+              : totalKnown
               ? `${serverTotal.toLocaleString()} profiles · paginated ${PAGE_SIZE}/page`
               : "Manage your indexed talent pool"}
           </div>
@@ -332,7 +373,7 @@ export function DashboardPage() {
       <div className="dash-controls">
         <input
           className="dash-search-input"
-          placeholder="Filter by name or title on this page…"
+          placeholder="Search all profiles by name, title, or role…"
           value={filterText}
           onChange={(e) => setFilterText(e.target.value)}
         />
@@ -346,7 +387,9 @@ export function DashboardPage() {
           ))}
         </select>
         <span className="dash-result-count">
-          {isFiltering
+          {searchMode
+            ? `${filtered.length} match${filtered.length !== 1 ? "es" : ""} across all profiles`
+            : filterSeniority !== "All"
             ? `${filtered.length} match${filtered.length !== 1 ? "es" : ""} on this page`
             : totalKnown
             ? `${serverTotal.toLocaleString()} total profiles`
@@ -441,42 +484,52 @@ export function DashboardPage() {
             </tbody>
           </table>
 
-          {/* ── Pagination controls ─────────────────────────────────────────── */}
-          <div className="dash-pagination">
-            <button
-              className="dash-page-btn"
-              onClick={handleFirst}
-              disabled={currentPage === 1 || pageLoading}
-              title="First page"
-            >«</button>
-            <button
-              className="dash-page-btn"
-              onClick={handlePrev}
-              disabled={currentPage === 1 || pageLoading}
-              title="Previous page"
-            >‹</button>
+          {/* ── Pagination controls — hidden in search mode ─────────────────── */}
+          {searchMode ? (
+            <div className="dash-pagination">
+              <span className="dash-page-info">
+                {pageLoading
+                  ? "Searching…"
+                  : `${filtered.length} result${filtered.length !== 1 ? "s" : ""} for "${filterText.trim()}"  ·  clear search to browse all`}
+              </span>
+            </div>
+          ) : (
+            <div className="dash-pagination">
+              <button
+                className="dash-page-btn"
+                onClick={handleFirst}
+                disabled={currentPage === 1 || pageLoading}
+                title="First page"
+              >«</button>
+              <button
+                className="dash-page-btn"
+                onClick={handlePrev}
+                disabled={currentPage === 1 || pageLoading}
+                title="Previous page"
+              >‹</button>
 
-            <span className="dash-page-info">
-              {pageLoading ? (
-                "Loading…"
-              ) : (
-                <>
-                  Page {currentPage}{totalPages ? ` of ${totalPages}` : ""}
-                  <span className="dash-page-range">
-                    &nbsp;· showing {isFiltering ? filtered.length : `${pageStart}–${pageEnd}`}
-                    {totalKnown && !isFiltering ? ` of ${serverTotal.toLocaleString()}` : ""}
-                  </span>
-                </>
-              )}
-            </span>
+              <span className="dash-page-info">
+                {pageLoading ? (
+                  "Loading…"
+                ) : (
+                  <>
+                    Page {currentPage}{totalPages ? ` of ${totalPages}` : ""}
+                    <span className="dash-page-range">
+                      &nbsp;· showing {filterSeniority !== "All" ? filtered.length : `${pageStart}–${pageEnd}`}
+                      {totalKnown && filterSeniority === "All" ? ` of ${serverTotal.toLocaleString()}` : ""}
+                    </span>
+                  </>
+                )}
+              </span>
 
-            <button
-              className="dash-page-btn"
-              onClick={handleNext}
-              disabled={!nextCursor || pageLoading}
-              title="Next page"
-            >›</button>
-          </div>
+              <button
+                className="dash-page-btn"
+                onClick={handleNext}
+                disabled={!nextCursor || pageLoading}
+                title="Next page"
+              >›</button>
+            </div>
+          )}
         </div>
       )}
 
