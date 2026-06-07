@@ -144,6 +144,7 @@ export function Sidebar({
           <PlusIcon />
           New Search
         </button>
+        <div className="sb-section-label">Tools</div>
         <button className="sb-screen-btn" onClick={onScreen}>
           <ScreenIcon />
           Screen Resume

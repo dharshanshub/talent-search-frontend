@@ -1276,17 +1276,24 @@ html, body, #root {
 }
 
 /* ── Screen Resume button in sidebar ─────────────────────────────────────── */
+.sb-section-label {
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+  color: rgba(148,163,184,.38);
+  padding: 10px 4px 5px;
+}
+
 .sb-screen-btn {
   width: 100%;
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 7px;
-  padding: 8px 14px;
-  margin-top: 8px;
-  background: rgba(255,255,255,.06);
-  color: rgba(203,213,225,.8);
-  border: 1px solid rgba(255,255,255,.1);
+  gap: 9px;
+  padding: 9px 12px;
+  background: rgba(99,102,241,.1);
+  color: rgba(199,210,254,.8);
+  border: 1px solid rgba(99,102,241,.28);
   border-radius: var(--radius-sm);
   font-family: var(--font);
   font-size: 12.5px;
@@ -1295,11 +1302,11 @@ html, body, #root {
   transition: all .18s;
   letter-spacing: .01em;
 }
-
 .sb-screen-btn:hover {
-  background: rgba(129,140,248,.15);
-  border-color: rgba(129,140,248,.35);
+  background: rgba(99,102,241,.2);
+  border-color: rgba(129,140,248,.5);
   color: #c7d2fe;
+  box-shadow: 0 0 16px rgba(99,102,241,.18);
 }
 
 /* ── Screen Drawer ───────────────────────────────────────────────────────── */
@@ -1974,18 +1981,36 @@ html, body, #root {
 
 /* ── Sidebar — Knowledge Base button ─────────────────────────────────────── */
 .sb-dash-btn {
-  display: flex; align-items: center; gap: 8px;
-  width: 100%; padding: 8px 10px;
-  background: transparent; border: 1px solid var(--border);
-  border-radius: var(--radius-sm); cursor: pointer;
-  font-size: 13px; font-weight: 500; color: var(--text-2);
-  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  padding: 9px 12px;
+  margin-top: 5px;
+  background: rgba(255,255,255,.03);
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: rgba(203,213,225,.65);
+  font-family: var(--font);
+  letter-spacing: .01em;
+  transition: all .18s;
 }
-.sb-dash-btn:hover { background: var(--bg-hover); color: var(--text); }
+.sb-dash-btn:hover {
+  background: rgba(255,255,255,.07);
+  border-color: rgba(255,255,255,.14);
+  color: rgba(203,213,225,.95);
+}
 .sb-dash-btn.active {
-  background: var(--indigo-light); border-color: var(--indigo-mid);
-  color: var(--indigo-dark); font-weight: 600;
+  background: rgba(79,70,229,.22);
+  border-color: rgba(99,102,241,.48);
+  color: #c7d2fe;
+  font-weight: 600;
+  box-shadow: 0 0 18px rgba(79,70,229,.22), inset 0 1px 0 rgba(255,255,255,.06);
 }
+.sb-dash-btn.active svg { color: #818cf8; }
 
 @keyframes spin { to { transform: rotate(360deg); } }
 
@@ -2147,31 +2172,35 @@ html, body, #root {
 }
 .dash-skill-more { font-size: 11px; color: var(--text-3); padding: 2px 4px; }
 
-.dash-td-action { display: flex; gap: 4px; align-items: center; }
+.dash-td-action { display: flex; gap: 6px; align-items: center; }
 
 .dash-view-btn {
-  display: flex; align-items: center; justify-content: center;
-  width: 28px; height: 28px; border-radius: 6px;
-  background: transparent; border: 1px solid transparent;
-  color: var(--text-3); cursor: pointer;
-  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 5px 11px; border-radius: 6px;
+  background: var(--indigo-light);
+  border: 1px solid var(--indigo-mid);
+  color: var(--indigo-dark);
+  font-size: 12px; font-weight: 500;
+  cursor: pointer; white-space: nowrap; font-family: var(--font);
+  transition: all .15s;
 }
 .dash-view-btn:hover:not(:disabled) {
-  background: var(--indigo-light); color: var(--indigo);
-  border-color: var(--indigo-mid);
+  background: var(--indigo); border-color: var(--indigo); color: #fff;
 }
 .dash-view-btn:disabled { opacity: 0.3; cursor: not-allowed; }
 
 .dash-delete-btn {
-  display: flex; align-items: center; justify-content: center;
-  width: 28px; height: 28px; border-radius: 6px;
-  background: transparent; border: 1px solid transparent;
-  color: var(--text-3); cursor: pointer;
-  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 5px 11px; border-radius: 6px;
+  background: transparent;
+  border: 1px solid var(--border-md);
+  color: var(--text-3);
+  font-size: 12px; font-weight: 500;
+  cursor: pointer; white-space: nowrap; font-family: var(--font);
+  transition: all .15s;
 }
 .dash-delete-btn:hover {
-  background: var(--red-light); color: var(--red);
-  border-color: #fecaca;
+  background: var(--red, #ef4444); border-color: var(--red, #ef4444); color: #fff;
 }
 
 /* Delete confirm modal */

@@ -289,7 +289,7 @@ export function DashboardPage() {
                 <Th col="years_experience" active={sortCol} dir={sortDir} onSort={handleSort}>Exp.</Th>
                 <th className="dash-th">Top Skills</th>
                 <Th col="indexed_at" active={sortCol} dir={sortDir} onSort={handleSort}>Added</Th>
-                <th className="dash-th dash-th-action" />
+                <th className="dash-th dash-th-action">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -328,11 +328,12 @@ export function DashboardPage() {
                   <td className="dash-td dash-td-action">
                     <button
                       className="dash-view-btn"
-                      title={r.blob_filename ? "View resume PDF" : "No PDF available for this candidate"}
+                      title={r.blob_filename ? "Open resume PDF in new tab" : "No PDF uploaded for this candidate"}
                       disabled={!r.blob_filename || !!resumeLoading[r.candidate_id]}
                       onClick={() => handleViewResume(r.candidate_id)}
                     >
                       {resumeLoading[r.candidate_id] ? <SpinnerIcon /> : <EyeIcon />}
+                      {resumeLoading[r.candidate_id] ? "Loading…" : "View PDF"}
                     </button>
                     <button
                       className="dash-delete-btn"
@@ -340,6 +341,7 @@ export function DashboardPage() {
                       onClick={() => setDeleteTarget(r)}
                     >
                       <TrashIcon />
+                      Remove
                     </button>
                   </td>
                 </tr>
