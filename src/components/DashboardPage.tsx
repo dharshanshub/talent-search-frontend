@@ -139,7 +139,7 @@ export function DashboardPage() {
     setError(null);
     setSearchMode(true);
     try {
-      const page = await listCandidatesPage(null, 500, term || undefined, sen !== "All" ? sen : undefined);
+      const page = await listCandidatesPage(null, 20, term || undefined, sen !== "All" ? sen : undefined);
       if (!mounted.current) return;
       setRecords(page.candidates);
       setNextCursor(null);
