@@ -2187,3 +2187,23 @@ html, body, #root {
 }
 .modal-btn-delete:hover:not(:disabled) { opacity: 0.88; }
 .modal-btn-delete:disabled, .modal-btn-cancel:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ── Pagination ───────────────────────────────────────────────────────────── */
+.dash-pagination {
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 14px 0 4px; border-top: 1px solid var(--border); margin-top: 2px;
+}
+.dash-page-btn {
+  width: 30px; height: 30px; display: flex; align-items: center; justify-content: center;
+  border-radius: var(--radius-sm); border: 1px solid var(--border);
+  background: var(--bg-white); color: var(--text-2); font-size: 15px;
+  cursor: pointer; transition: background 0.15s, border-color 0.15s;
+}
+.dash-page-btn:hover:not(:disabled) {
+  background: var(--indigo-light); border-color: var(--indigo); color: var(--indigo);
+}
+.dash-page-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+.dash-page-info {
+  font-size: 13px; color: var(--text-2); padding: 0 6px; white-space: nowrap;
+}
+.dash-page-range { color: var(--text-3, #94a3b8); font-size: 12px; }
