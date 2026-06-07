@@ -85,14 +85,16 @@ function TagInput({ tags, onChange, placeholder, colorClass }: {
 
 // ── main component ────────────────────────────────────────────────────────────
 export function ScreenDrawer({ onClose }: Props) {
-  const [step, setStep]         = useState<Step>("upload");
-  const [dragging, setDragging] = useState(false);
-  const [fileName, setFileName] = useState("");
-  const [error, setError]       = useState("");
-  const [rawText, setRawText]   = useState("");
-  const [profile, setProfile]   = useState<ExtractedProfile | null>(null);
-  const [indexing, setIndexing] = useState(false);
-  const [result, setResult]     = useState<{ candidate_id: string; chunks: number } | null>(null);
+  const [step, setStep]               = useState<Step>("upload");
+  const [dragging, setDragging]       = useState(false);
+  const [fileName, setFileName]       = useState("");
+  const [error, setError]             = useState("");
+  const [rawText, setRawText]         = useState("");
+  const [candidateId, setCandidateId] = useState("");
+  const [blobFilename, setBlobFilename] = useState("");
+  const [profile, setProfile]         = useState<ExtractedProfile | null>(null);
+  const [indexing, setIndexing]       = useState(false);
+  const [result, setResult]           = useState<{ candidate_id: string; chunks: number } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const handleFile = async (file: File) => {
@@ -102,6 +104,8 @@ export function ScreenDrawer({ onClose }: Props) {
     setStep("extracting");
     try {
       const res = await uploadResume(file);
+      setCandidateId(res.candidate_id);
+      setBlobFilename(res.blob_filename);
       setProfile(res.extracted);
       setRawText(res.raw_text);
       setStep("review");
@@ -121,7 +125,7 @@ export function ScreenDrawer({ onClose }: Props) {
     if (!profile) return;
     setIndexing(true);
     try {
-      const res = await indexCandidate(profile, rawText);
+      const res = await indexCandidate(candidateId, blobFilename, profile, rawText);
       setResult({ candidate_id: res.candidate_id, chunks: res.chunks_indexed });
       setStep("done");
     } catch (e: unknown) {
@@ -326,7 +330,8 @@ export function ScreenDrawer({ onClose }: Props) {
               <div className="sc-done-id">ID: {result.candidate_id}</div>
               <div className="sc-done-actions">
                 <button className="sc-index-btn" onClick={() => {
-                  setStep("upload"); setProfile(null); setRawText(""); setFileName(""); setResult(null);
+                  setStep("upload"); setProfile(null); setRawText(""); setFileName("");
+                  setResult(null); setCandidateId(""); setBlobFilename("");
                 }}>
                   Screen Another Resume
                 </button>
