@@ -154,8 +154,6 @@ export function Sidebar({ sessions, activeId, onNew, onSelect, onDelete, onScree
         <div className="sb-footer-stat">
           <span className="sb-footer-num">{sessions.length}</span> session{sessions.length !== 1 ? "s" : ""}
         </div>
-        <div className="sb-footer-dot" />
-        <div className="sb-footer-stat">100 profiles</div>
       </div>
     </aside>
   );
