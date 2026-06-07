@@ -8,10 +8,6 @@ import {
   type KnowledgeBaseStats,
 } from "../api/client";
 
-const SENIORITY_ORDER: Record<string, number> = {
-  Junior: 0, "Mid-Level": 1, Senior: 2, Staff: 3, Principal: 4,
-};
-
 const SENIORITY_COLORS: Record<string, string> = {
   Junior: "#10b981",
   "Mid-Level": "#3b82f6",
@@ -262,8 +258,6 @@ export function DashboardPage() {
   const pageEnd = pageStart + filtered.length - 1;
   const totalPages = totalKnown ? Math.ceil(serverTotal / PAGE_SIZE) : null;
   const seniorityOptions = ["All", "Junior", "Mid-Level", "Senior", "Staff", "Principal"];
-
-  const isFiltering = searchMode;
 
   return (
     <div className="dash-pane">
