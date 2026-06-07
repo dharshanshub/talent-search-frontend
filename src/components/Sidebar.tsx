@@ -1,12 +1,16 @@
 import type { ChatSession } from "../hooks/useChatHistory";
 
+type View = "chat" | "dashboard";
+
 interface Props {
   sessions: ChatSession[];
   activeId: string | null;
+  activeView: View;
   onNew: () => void;
   onSelect: (id: string) => void;
   onDelete: (id: string) => void;
   onScreen: () => void;
+  onViewChange: (view: View) => void;
 }
 
 function LogoMark() {
@@ -42,6 +46,25 @@ function TrashIcon() {
   );
 }
 
+function ScreenIcon() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+      <polyline points="14 2 14 8 20 8"/>
+      <line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
+    </svg>
+  );
+}
+
+function DashboardIcon() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+      <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
+      <rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>
+    </svg>
+  );
+}
+
 function relTime(ts: number): string {
   const diff = Date.now() - ts;
   const mins = Math.floor(diff / 60000);
@@ -55,7 +78,6 @@ function relTime(ts: number): string {
   return new Date(ts).toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
-// Group sessions by recency
 function groupSessions(sessions: ChatSession[]) {
   const today: ChatSession[] = [];
   const yesterday: ChatSession[] = [];
@@ -71,7 +93,9 @@ function groupSessions(sessions: ChatSession[]) {
   return { today, yesterday, older };
 }
 
-export function Sidebar({ sessions, activeId, onNew, onSelect, onDelete, onScreen }: Props) {
+export function Sidebar({
+  sessions, activeId, activeView, onNew, onSelect, onDelete, onScreen, onViewChange,
+}: Props) {
   const groups = groupSessions(sessions);
 
   const renderGroup = (label: string, items: ChatSession[]) => {
@@ -82,8 +106,8 @@ export function Sidebar({ sessions, activeId, onNew, onSelect, onDelete, onScree
         {items.map((s) => (
           <div
             key={s.id}
-            className={`sb-item${s.id === activeId ? " active" : ""}`}
-            onClick={() => onSelect(s.id)}
+            className={`sb-item${s.id === activeId && activeView === "chat" ? " active" : ""}`}
+            onClick={() => { onViewChange("chat"); onSelect(s.id); }}
           >
             <ChatIcon />
             <div className="sb-item-content">
@@ -114,29 +138,30 @@ export function Sidebar({ sessions, activeId, onNew, onSelect, onDelete, onScree
         </div>
       </div>
 
-      {/* actions */}
+      {/* nav actions */}
       <div className="sb-top">
-        <button className="sb-new-btn" onClick={onNew}>
+        <button className="sb-new-btn" onClick={() => { onViewChange("chat"); onNew(); }}>
           <PlusIcon />
           New Search
         </button>
         <button className="sb-screen-btn" onClick={onScreen}>
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
-            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-            <polyline points="14 2 14 8 20 8"/>
-            <line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
-          </svg>
+          <ScreenIcon />
           Screen Resume
+        </button>
+        <button
+          className={`sb-dash-btn${activeView === "dashboard" ? " active" : ""}`}
+          onClick={() => onViewChange("dashboard")}
+        >
+          <DashboardIcon />
+          Knowledge Base
         </button>
       </div>
 
-      {/* history */}
+      {/* history — only visible when in chat view */}
       <div className="sb-history">
         {sessions.length === 0 ? (
           <div className="sb-empty">
-            <div className="sb-empty-icon">
-              <ChatIcon />
-            </div>
+            <div className="sb-empty-icon"><ChatIcon /></div>
             <div className="sb-empty-text">No searches yet</div>
             <div className="sb-empty-sub">Your search history will appear here</div>
           </div>

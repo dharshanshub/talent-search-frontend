@@ -143,6 +143,54 @@ export async function searchTalentStream(
   }
 }
 
+// ── Knowledge base dashboard API ─────────────────────────────────────────────
+
+export interface CandidateRecord {
+  candidate_id: string;
+  name: string;
+  title: string;
+  role: string;
+  seniority: string;
+  location: string;
+  years_experience: number;
+  skills: string[];
+  industries: string[];
+  blob_filename: string | null;
+  indexed_at: string;
+}
+
+export interface KnowledgeBaseStats {
+  total_profiles: number;
+  seniority_distribution: Record<string, number>;
+  avg_experience_years: number;
+  last_added_at: string | null;
+  top_skills: string[];
+}
+
+export interface KnowledgeBaseResponse {
+  stats: KnowledgeBaseStats;
+  candidates: CandidateRecord[];
+}
+
+export async function listKnowledgeBase(): Promise<KnowledgeBaseResponse> {
+  const response = await fetch(`${BASE_URL}/api/v1/knowledge-base`);
+  if (!response.ok) {
+    const err: ApiError = await response.json();
+    throw new Error(err.message ?? "Failed to load knowledge base");
+  }
+  return response.json() as Promise<KnowledgeBaseResponse>;
+}
+
+export async function deleteCandidate(candidateId: string): Promise<void> {
+  const response = await fetch(`${BASE_URL}/api/v1/knowledge-base/${candidateId}`, {
+    method: "DELETE",
+  });
+  if (!response.ok) {
+    const err: ApiError = await response.json();
+    throw new Error(err.message ?? "Delete failed");
+  }
+}
+
 export async function uploadResume(file: File): Promise<UploadResponse> {
   const form = new FormData();
   form.append("file", file);
