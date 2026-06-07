@@ -198,10 +198,12 @@ export async function listCandidatesPage(
   cursor?: string | null,
   limit = 20,
   search?: string,
+  seniority?: string,
 ): Promise<CandidatesPageResponse> {
   const params = new URLSearchParams({ limit: String(limit) });
   if (cursor) params.set("cursor", cursor);
   if (search) params.set("search", search);
+  if (seniority && seniority !== "All") params.set("seniority", seniority);
   const response = await fetch(`${BASE_URL}/api/v1/knowledge-base/candidates?${params}`);
   if (!response.ok) {
     const err: ApiError = await response.json();

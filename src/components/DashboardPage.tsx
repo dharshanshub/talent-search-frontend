@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   getKnowledgeBaseStats,
   listCandidatesPage,
@@ -134,13 +134,16 @@ export function DashboardPage() {
     }
   }, []);
 
-  const loadSearch = useCallback(async (term: string) => {
+  // Current seniority in a ref so the debounce closure always reads the latest value
+  // without needing filterSeniority in its dependency array (which would cause double-fires).
+  const filterSeniorityRef = useRef("All");
+
+  const loadFiltered = useCallback(async (term: string, sen: string) => {
     setPageLoading(true);
     setError(null);
     setSearchMode(true);
     try {
-      // Fetch up to 500 matches — more than any realistic pool for this app
-      const page = await listCandidatesPage(null, 500, term);
+      const page = await listCandidatesPage(null, 500, term || undefined, sen !== "All" ? sen : undefined);
       if (!mounted.current) return;
       setRecords(page.candidates);
       setNextCursor(null);
@@ -152,11 +155,12 @@ export function DashboardPage() {
     }
   }, []);
 
-  // Debounce filter input: wait 350 ms after typing stops before hitting the server.
-  // When text is cleared, immediately return to cursor-paginated browse.
-  useEffect(() => {
+  // Seniority dropdown: fire immediately (no debounce), update ref before the call.
+  const handleSeniorityChange = useCallback((newSeniority: string) => {
+    setFilterSeniority(newSeniority);
+    filterSeniorityRef.current = newSeniority;
     const term = filterText.trim();
-    if (!term) {
+    if (!term && newSeniority === "All") {
       if (searchModeRef.current) {
         setSearchMode(false);
         setCursorStack([null]);
@@ -164,9 +168,24 @@ export function DashboardPage() {
       }
       return;
     }
-    const timer = setTimeout(() => loadSearch(term), 350);
+    loadFiltered(term, newSeniority);
+  }, [filterText, loadPage, loadFiltered]);
+
+  // Text input: debounce 350 ms, read current seniority from ref to avoid double-fires.
+  useEffect(() => {
+    const term = filterText.trim();
+    if (!term) {
+      if (filterSeniorityRef.current === "All" && searchModeRef.current) {
+        setSearchMode(false);
+        setCursorStack([null]);
+        loadPage(null);
+      }
+      // If seniority is still active, stay in filter mode — handleSeniorityChange already loaded the view.
+      return;
+    }
+    const timer = setTimeout(() => loadFiltered(term, filterSeniorityRef.current), 350);
     return () => clearTimeout(timer);
-  }, [filterText, loadPage, loadSearch]);
+  }, [filterText, loadPage, loadFiltered]);
 
   // Load stats + first page in parallel on mount
   useEffect(() => {
@@ -201,15 +220,8 @@ export function DashboardPage() {
     Promise.all([loadStats(), loadPage(null)]);
   }, [loadStats, loadPage]);
 
-  // Text search is server-side; seniority filter is still applied client-side
-  // since it's a cheap enum match on whatever records are currently loaded.
-  const filtered = useMemo(() =>
-    records.filter((r) => {
-      if (filterSeniority !== "All" && r.seniority !== filterSeniority) return false;
-      return true;
-    }),
-    [records, filterSeniority],
-  );
+  // Both text and seniority are now filtered server-side; records is already the result.
+  const filtered = records;
 
   // ── Delete ────────────────────────────────────────────────────────────────
 
@@ -251,7 +263,7 @@ export function DashboardPage() {
   const totalPages = totalKnown ? Math.ceil(serverTotal / PAGE_SIZE) : null;
   const seniorityOptions = ["All", "Junior", "Mid-Level", "Senior", "Staff", "Principal"];
 
-  const isFiltering = searchMode || filterSeniority !== "All";
+  const isFiltering = searchMode;
 
   return (
     <div className="dash-pane">
@@ -380,7 +392,7 @@ export function DashboardPage() {
         <select
           className="dash-seniority-select"
           value={filterSeniority}
-          onChange={(e) => setFilterSeniority(e.target.value)}
+          onChange={(e) => handleSeniorityChange(e.target.value)}
         >
           {seniorityOptions.map((o) => (
             <option key={o} value={o}>{o === "All" ? "All seniorities" : o}</option>
@@ -388,9 +400,7 @@ export function DashboardPage() {
         </select>
         <span className="dash-result-count">
           {searchMode
-            ? `${filtered.length} match${filtered.length !== 1 ? "es" : ""} across all profiles`
-            : filterSeniority !== "All"
-            ? `${filtered.length} match${filtered.length !== 1 ? "es" : ""} on this page`
+            ? `${filtered.length} result${filtered.length !== 1 ? "s" : ""} across all profiles`
             : totalKnown
             ? `${serverTotal.toLocaleString()} total profiles`
             : `${records.length} loaded`}
@@ -515,8 +525,7 @@ export function DashboardPage() {
                   <>
                     Page {currentPage}{totalPages ? ` of ${totalPages}` : ""}
                     <span className="dash-page-range">
-                      &nbsp;· showing {filterSeniority !== "All" ? filtered.length : `${pageStart}–${pageEnd}`}
-                      {totalKnown && filterSeniority === "All" ? ` of ${serverTotal.toLocaleString()}` : ""}
+                      &nbsp;· showing {pageStart}–{pageEnd} of {totalKnown ? serverTotal.toLocaleString() : "?"}
                     </span>
                   </>
                 )}
