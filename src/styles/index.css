@@ -2147,6 +2147,21 @@ html, body, #root {
 }
 .dash-skill-more { font-size: 11px; color: var(--text-3); padding: 2px 4px; }
 
+.dash-td-action { display: flex; gap: 4px; align-items: center; }
+
+.dash-view-btn {
+  display: flex; align-items: center; justify-content: center;
+  width: 28px; height: 28px; border-radius: 6px;
+  background: transparent; border: 1px solid transparent;
+  color: var(--text-3); cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.dash-view-btn:hover:not(:disabled) {
+  background: var(--indigo-light); color: var(--indigo);
+  border-color: var(--indigo-mid);
+}
+.dash-view-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
 .dash-delete-btn {
   display: flex; align-items: center; justify-content: center;
   width: 28px; height: 28px; border-radius: 6px;

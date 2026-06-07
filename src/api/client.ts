@@ -181,6 +181,16 @@ export async function listKnowledgeBase(): Promise<KnowledgeBaseResponse> {
   return response.json() as Promise<KnowledgeBaseResponse>;
 }
 
+export async function getResumeUrl(candidateId: string): Promise<string> {
+  const response = await fetch(`${BASE_URL}/api/v1/knowledge-base/${candidateId}/resume`);
+  if (!response.ok) {
+    const err: ApiError = await response.json();
+    throw new Error(err.message ?? "Could not retrieve resume URL");
+  }
+  const data = await response.json() as { url: string; expires_in: number };
+  return data.url;
+}
+
 export async function deleteCandidate(candidateId: string): Promise<void> {
   const response = await fetch(`${BASE_URL}/api/v1/knowledge-base/${candidateId}`, {
     method: "DELETE",

@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   listKnowledgeBase,
   deleteCandidate,
+  getResumeUrl,
   type CandidateRecord,
   type KnowledgeBaseStats,
 } from "../api/client";
@@ -90,6 +91,21 @@ export function DashboardPage() {
 
   const [deleteTarget, setDeleteTarget] = useState<CandidateRecord | null>(null);
   const [deleting, setDeleting] = useState(false);
+
+  // Per-row resume loading state — keyed by candidate_id
+  const [resumeLoading, setResumeLoading] = useState<Record<string, boolean>>({});
+
+  const handleViewResume = useCallback(async (candidateId: string) => {
+    setResumeLoading((prev) => ({ ...prev, [candidateId]: true }));
+    try {
+      const url = await getResumeUrl(candidateId);
+      window.open(url, "_blank", "noopener,noreferrer");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not load resume");
+    } finally {
+      setResumeLoading((prev) => ({ ...prev, [candidateId]: false }));
+    }
+  }, []);
 
   const [page, setPage] = useState(1);
   const PAGE_SIZE = 20;
@@ -311,6 +327,14 @@ export function DashboardPage() {
                   <td className="dash-td dash-td-date">{formatDate(r.indexed_at)}</td>
                   <td className="dash-td dash-td-action">
                     <button
+                      className="dash-view-btn"
+                      title={r.blob_filename ? "View resume PDF" : "No PDF available for this candidate"}
+                      disabled={!r.blob_filename || !!resumeLoading[r.candidate_id]}
+                      onClick={() => handleViewResume(r.candidate_id)}
+                    >
+                      {resumeLoading[r.candidate_id] ? <SpinnerIcon /> : <EyeIcon />}
+                    </button>
+                    <button
                       className="dash-delete-btn"
                       title="Remove from knowledge base"
                       onClick={() => setDeleteTarget(r)}
@@ -386,6 +410,24 @@ function Th({
     <th className={`dash-th dash-th-sortable${col === active ? " sorted" : ""}`} onClick={() => onSort(col)}>
       {children} <SortArrow col={col} active={active} dir={dir} />
     </th>
+  );
+}
+
+function EyeIcon() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+      <circle cx="12" cy="12" r="3"/>
+    </svg>
+  );
+}
+
+function SpinnerIcon() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
+      style={{ animation: "spin 0.8s linear infinite" }}>
+      <path d="M12 2a10 10 0 0 1 10 10" strokeLinecap="round"/>
+    </svg>
   );
 }
 
