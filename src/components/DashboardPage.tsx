@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   listKnowledgeBase,
   deleteCandidate,
@@ -91,6 +91,9 @@ export function DashboardPage() {
   const [deleteTarget, setDeleteTarget] = useState<CandidateRecord | null>(null);
   const [deleting, setDeleting] = useState(false);
 
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 20;
+
   const load = async () => {
     setLoading(true);
     setError(null);
@@ -110,7 +113,10 @@ export function DashboardPage() {
   const handleSort = (col: SortCol) => {
     if (sortCol === col) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
     else { setSortCol(col); setSortDir("asc"); }
+    setPage(1);
   };
+
+  useEffect(() => { setPage(1); }, [filterText, filterSeniority]);
 
   const handleDelete = async () => {
     if (!deleteTarget) return;
@@ -128,24 +134,32 @@ export function DashboardPage() {
   };
 
   // ── Filtered + sorted rows ────────────────────────────────────────────────
-  const filtered = records
-    .filter((r) => {
-      const txt = filterText.toLowerCase();
-      if (txt && !r.name.toLowerCase().includes(txt) && !r.title.toLowerCase().includes(txt)) return false;
-      if (filterSeniority !== "All" && r.seniority !== filterSeniority) return false;
-      return true;
-    })
-    .sort((a, b) => {
-      let av: string | number = a[sortCol];
-      let bv: string | number = b[sortCol];
-      if (sortCol === "seniority") {
-        av = SENIORITY_ORDER[av as string] ?? 99;
-        bv = SENIORITY_ORDER[bv as string] ?? 99;
-      }
-      if (av < bv) return sortDir === "asc" ? -1 : 1;
-      if (av > bv) return sortDir === "asc" ? 1 : -1;
-      return 0;
-    });
+  const filtered = useMemo(() =>
+    records
+      .filter((r) => {
+        const txt = filterText.toLowerCase();
+        if (txt && !r.name.toLowerCase().includes(txt) && !r.title.toLowerCase().includes(txt)) return false;
+        if (filterSeniority !== "All" && r.seniority !== filterSeniority) return false;
+        return true;
+      })
+      .sort((a, b) => {
+        let av: string | number = a[sortCol];
+        let bv: string | number = b[sortCol];
+        if (sortCol === "seniority") {
+          av = SENIORITY_ORDER[av as string] ?? 99;
+          bv = SENIORITY_ORDER[bv as string] ?? 99;
+        }
+        if (av < bv) return sortDir === "asc" ? -1 : 1;
+        if (av > bv) return sortDir === "asc" ? 1 : -1;
+        return 0;
+      }),
+    [records, filterText, filterSeniority, sortCol, sortDir]
+  );
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages);
+  const pageStart = (safePage - 1) * PAGE_SIZE;
+  const paginated = filtered.slice(pageStart, pageStart + PAGE_SIZE);
 
   const seniorityOptions = ["All", "Junior", "Mid-Level", "Senior", "Staff", "Principal"];
 
@@ -228,7 +242,9 @@ export function DashboardPage() {
           ))}
         </select>
         <span className="dash-result-count">
-          {filtered.length} of {records.length} profiles
+          {filtered.length === records.length
+            ? `${records.length} profiles`
+            : `${filtered.length} of ${records.length} profiles`}
         </span>
       </div>
 
@@ -261,9 +277,9 @@ export function DashboardPage() {
               </tr>
             </thead>
             <tbody>
-              {filtered.map((r, i) => (
+              {paginated.map((r, i) => (
                 <tr key={r.candidate_id} className="dash-tr">
-                  <td className="dash-td dash-td-num">{i + 1}</td>
+                  <td className="dash-td dash-td-num">{pageStart + i + 1}</td>
                   <td className="dash-td dash-td-name">
                     <div className="dash-name">{r.name}</div>
                     {r.industries.length > 0 && (
@@ -306,6 +322,40 @@ export function DashboardPage() {
               ))}
             </tbody>
           </table>
+          {totalPages > 1 && (
+            <div className="dash-pagination">
+              <button
+                className="dash-page-btn"
+                onClick={() => setPage(1)}
+                disabled={safePage === 1}
+                title="First page"
+              >«</button>
+              <button
+                className="dash-page-btn"
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={safePage === 1}
+                title="Previous page"
+              >‹</button>
+              <span className="dash-page-info">
+                Page {safePage} of {totalPages}
+                <span className="dash-page-range">
+                  &nbsp;({pageStart + 1}–{Math.min(pageStart + PAGE_SIZE, filtered.length)} of {filtered.length})
+                </span>
+              </span>
+              <button
+                className="dash-page-btn"
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={safePage === totalPages}
+                title="Next page"
+              >›</button>
+              <button
+                className="dash-page-btn"
+                onClick={() => setPage(totalPages)}
+                disabled={safePage === totalPages}
+                title="Last page"
+              >»</button>
+            </div>
+          )}
         </div>
       )}
 
