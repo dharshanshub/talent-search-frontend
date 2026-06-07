@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import type { CandidateMatch } from "../api/client";
 import { CandidateCard } from "./CandidateCard";
 import { MessageBubble } from "./MessageBubble";
@@ -59,8 +59,6 @@ export function ChatWindow({ sessionId, initialMessages, onMessagesChange }: Pro
   const [input, setInput] = useState("");
   const [drawerCandidate, setDrawerCandidate] = useState<CandidateMatch | null>(null);
   const { loading, error, search } = useSearch();
-  const bottomRef = useRef<HTMLDivElement>(null);
-
   // Sync when switching sessions
   useEffect(() => {
     setMessages(initialMessages);
@@ -72,9 +70,6 @@ export function ChatWindow({ sessionId, initialMessages, onMessagesChange }: Pro
     onMessagesChange(msgs);
   };
 
-  const scroll = () =>
-    setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 60);
-
   const run = async (query: string) => {
     const q = query.trim();
     if (!q || loading) return;
@@ -82,7 +77,6 @@ export function ChatWindow({ sessionId, initialMessages, onMessagesChange }: Pro
     setInput("");
     const withUser: ChatMessage[] = [...messages, { role: "user", content: q }];
     push(withUser);
-    scroll();
 
     const result = await search(q);
 
@@ -97,7 +91,6 @@ export function ChatWindow({ sessionId, initialMessages, onMessagesChange }: Pro
         { role: "assistant", content: error ?? "Something went wrong.", isError: true },
       ]);
     }
-    scroll();
   };
 
   const isEmpty = messages.length === 0 && !loading;
@@ -194,7 +187,6 @@ export function ChatWindow({ sessionId, initialMessages, onMessagesChange }: Pro
             {loading && <TypingIndicator />}
           </>
         )}
-        <div ref={bottomRef} />
       </div>
 
       {/* ── Input ────────────────────────────────── */}
