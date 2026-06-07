@@ -136,10 +136,6 @@ export function ChatWindow({ sessionId, initialMessages, onMessagesChange }: Pro
 
         {/* right: actions + avatar */}
         <div className="chat-header-right">
-          <div className="header-pill">
-            <div className="header-pill-dot" />
-            100 profiles indexed
-          </div>
           <button className="chat-header-action-btn" title="Notifications">
             <BellIcon />
           </button>
@@ -157,8 +153,9 @@ export function ChatWindow({ sessionId, initialMessages, onMessagesChange }: Pro
             <div className="empty-hero"><SearchIcon /></div>
             <div className="empty-title">Find your ideal candidate</div>
             <div className="empty-subtitle">
-              Describe who you are looking for in plain English. TalentAI searches
-              100 indexed profiles using semantic search and surfaces the best matches.
+              Describe the candidate you need in plain English. TalentAI uses semantic
+              search and AI to find the best-matching candidates from your talent pool
+              and generates instant insights on every match.
             </div>
             <div className="example-grid">
               {EXAMPLES.map((ex) => (
