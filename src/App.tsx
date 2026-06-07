@@ -1,13 +1,17 @@
 import { useEffect, useState } from "react";
 import { ChatWindow } from "./components/ChatWindow";
 import { DashboardPage } from "./components/DashboardPage";
+import { LoginPage } from "./components/LoginPage";
 import { ScreenDrawer } from "./components/ScreenDrawer";
 import { Sidebar } from "./components/Sidebar";
+import { useAuth } from "./context/AuthContext";
 import { useChatHistory } from "./hooks/useChatHistory";
 
 type View = "chat" | "dashboard";
 
 export default function App() {
+  const { isAuthenticated, logout } = useAuth();
+
   const {
     sessions,
     activeId,
@@ -27,6 +31,10 @@ export default function App() {
       selectSession(sessions[0].id);
     }
   }, []);
+
+  if (!isAuthenticated) {
+    return <LoginPage />;
+  }
 
   const handleNew = () => {
     newSession();
@@ -48,6 +56,7 @@ export default function App() {
         onDelete={deleteSession}
         onScreen={() => setScreenOpen(true)}
         onViewChange={setView}
+        onLogout={logout}
       />
       {screenOpen && <ScreenDrawer onClose={() => setScreenOpen(false)} />}
       {view === "dashboard" ? (

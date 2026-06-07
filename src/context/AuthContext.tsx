@@ -1,0 +1,49 @@
+import { createContext, useCallback, useContext, useEffect, useState } from "react";
+
+const TOKEN_KEY = "talent_ai_token";
+
+interface AuthContextValue {
+  isAuthenticated: boolean;
+  token: string | null;
+  login: (token: string) => void;
+  logout: () => void;
+}
+
+const AuthContext = createContext<AuthContextValue | null>(null);
+
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const [token, setTokenState] = useState<string | null>(() =>
+    localStorage.getItem(TOKEN_KEY),
+  );
+
+  const login = useCallback((newToken: string) => {
+    localStorage.setItem(TOKEN_KEY, newToken);
+    setTokenState(newToken);
+  }, []);
+
+  const logout = useCallback(() => {
+    localStorage.removeItem(TOKEN_KEY);
+    setTokenState(null);
+  }, []);
+
+  // Listen for 401 responses dispatched by the API client
+  useEffect(() => {
+    const handler = () => logout();
+    window.addEventListener("auth:unauthorized", handler);
+    return () => window.removeEventListener("auth:unauthorized", handler);
+  }, [logout]);
+
+  return (
+    <AuthContext.Provider value={{ isAuthenticated: !!token, token, login, logout }}>
+      {children}
+    </AuthContext.Provider>
+  );
+}
+
+export function useAuth(): AuthContextValue {
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error("useAuth must be used inside <AuthProvider>");
+  return ctx;
+}
+
+export { TOKEN_KEY };

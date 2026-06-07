@@ -1,4 +1,42 @@
 const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "";
+const TOKEN_KEY = "talent_ai_token";
+
+// ── Auth helpers ──────────────────────────────────────────────────────────────
+
+export function getToken(): string | null {
+  return localStorage.getItem(TOKEN_KEY);
+}
+
+/** Central fetch wrapper — injects Authorization header and fires a global
+ *  "auth:unauthorized" event on 401 so AuthContext can redirect to login. */
+async function apiFetch(url: string, init: RequestInit = {}): Promise<Response> {
+  const token = getToken();
+  const headers = new Headers(init.headers);
+  if (token) headers.set("Authorization", `Bearer ${token}`);
+  const response = await fetch(url, { ...init, headers });
+  if (response.status === 401) {
+    localStorage.removeItem(TOKEN_KEY);
+    window.dispatchEvent(new Event("auth:unauthorized"));
+  }
+  return response;
+}
+
+export async function loginUser(
+  username: string,
+  password: string,
+): Promise<string> {
+  const response = await fetch(`${BASE_URL}/api/v1/auth/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ username, password }),
+  });
+  if (!response.ok) {
+    const body = await response.json().catch(() => ({}));
+    throw new Error(body.detail ?? "Login failed");
+  }
+  const data = await response.json() as { access_token: string };
+  return data.access_token;
+}
 
 export interface ConversationMessage {
   role: "user" | "assistant";
@@ -84,7 +122,7 @@ export async function searchTalentStream(
 ): Promise<void> {
   let response: Response;
   try {
-    response = await fetch(`${BASE_URL}/api/v1/search/stream`, {
+    response = await apiFetch(`${BASE_URL}/api/v1/search/stream`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ query, messages: history, top_k: topK ?? null }),
@@ -186,7 +224,7 @@ export interface CandidatesPageResponse {
 }
 
 export async function getKnowledgeBaseStats(): Promise<KnowledgeBaseStats> {
-  const response = await fetch(`${BASE_URL}/api/v1/knowledge-base/stats`);
+  const response = await apiFetch(`${BASE_URL}/api/v1/knowledge-base/stats`);
   if (!response.ok) {
     const err: ApiError = await response.json();
     throw new Error(err.message ?? "Failed to load knowledge base stats");
@@ -204,7 +242,7 @@ export async function listCandidatesPage(
   if (cursor) params.set("cursor", cursor);
   if (search) params.set("search", search);
   if (seniority && seniority !== "All") params.set("seniority", seniority);
-  const response = await fetch(`${BASE_URL}/api/v1/knowledge-base/candidates?${params}`);
+  const response = await apiFetch(`${BASE_URL}/api/v1/knowledge-base/candidates?${params}`);
   if (!response.ok) {
     const err: ApiError = await response.json();
     throw new Error(err.message ?? "Failed to load candidates");
@@ -213,7 +251,7 @@ export async function listCandidatesPage(
 }
 
 export async function getResumeUrl(candidateId: string): Promise<string> {
-  const response = await fetch(`${BASE_URL}/api/v1/knowledge-base/${candidateId}/resume`);
+  const response = await apiFetch(`${BASE_URL}/api/v1/knowledge-base/${candidateId}/resume`);
   if (!response.ok) {
     const err: ApiError = await response.json();
     throw new Error(err.message ?? "Could not retrieve resume URL");
@@ -223,7 +261,7 @@ export async function getResumeUrl(candidateId: string): Promise<string> {
 }
 
 export async function deleteCandidate(candidateId: string): Promise<void> {
-  const response = await fetch(`${BASE_URL}/api/v1/knowledge-base/${candidateId}`, {
+  const response = await apiFetch(`${BASE_URL}/api/v1/knowledge-base/${candidateId}`, {
     method: "DELETE",
   });
   if (!response.ok) {
@@ -235,7 +273,7 @@ export async function deleteCandidate(candidateId: string): Promise<void> {
 export async function uploadResume(file: File): Promise<UploadResponse> {
   const form = new FormData();
   form.append("file", file);
-  const response = await fetch(`${BASE_URL}/api/v1/candidates/upload`, {
+  const response = await apiFetch(`${BASE_URL}/api/v1/candidates/upload`, {
     method: "POST",
     body: form,
   });
@@ -252,7 +290,7 @@ export async function indexCandidate(
   profile: ExtractedProfile,
   rawText: string,
 ): Promise<IndexResponse> {
-  const response = await fetch(`${BASE_URL}/api/v1/candidates/index`, {
+  const response = await apiFetch(`${BASE_URL}/api/v1/candidates/index`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({

@@ -2275,3 +2275,119 @@ html, body, #root {
   font-size: 13px; color: var(--text-2); padding: 0 6px; white-space: nowrap;
 }
 .dash-page-range { color: var(--text-3, #94a3b8); font-size: 12px; }
+
+/* ── Login page ──────────────────────────────────────────────────────────── */
+.login-backdrop {
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #0f172a;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 380px;
+  background: #1e293b;
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 16px;
+  padding: 40px 36px 36px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-shadow: 0 24px 60px rgba(0,0,0,.5);
+}
+
+.login-logo {
+  width: 60px; height: 60px;
+  background: linear-gradient(135deg, #6366f1, #4f46e5);
+  border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 16px;
+  box-shadow: 0 8px 24px rgba(99,102,241,.35);
+}
+
+.login-title {
+  font-size: 22px; font-weight: 700;
+  color: #f1f5f9; letter-spacing: -.3px;
+  margin-bottom: 4px;
+}
+
+.login-sub {
+  font-size: 13px; color: rgba(148,163,184,.6);
+  margin-bottom: 28px;
+}
+
+.login-form { width: 100%; display: flex; flex-direction: column; gap: 16px; }
+
+.login-field { display: flex; flex-direction: column; gap: 6px; }
+
+.login-label {
+  font-size: 12px; font-weight: 500;
+  color: rgba(148,163,184,.75); text-transform: uppercase; letter-spacing: .5px;
+}
+
+.login-input {
+  width: 100%;
+  padding: 10px 14px;
+  background: rgba(255,255,255,.05);
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 8px;
+  color: #f1f5f9; font-size: 14px;
+  outline: none;
+  transition: border-color .15s, box-shadow .15s;
+}
+.login-input:focus {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99,102,241,.18);
+}
+.login-input:disabled { opacity: .5; cursor: not-allowed; }
+
+.login-error {
+  font-size: 13px; color: #f87171;
+  background: rgba(248,113,113,.08);
+  border: 1px solid rgba(248,113,113,.2);
+  border-radius: 8px; padding: 10px 14px;
+}
+
+.login-btn {
+  width: 100%; padding: 11px;
+  background: #6366f1; color: #fff;
+  border: none; border-radius: 8px;
+  font-size: 14px; font-weight: 600; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  margin-top: 4px;
+  transition: background .15s, box-shadow .15s;
+}
+.login-btn:hover:not(:disabled) {
+  background: #4f46e5;
+  box-shadow: 0 4px 16px rgba(99,102,241,.35);
+}
+.login-btn:disabled { opacity: .5; cursor: not-allowed; }
+
+.login-spinner {
+  width: 14px; height: 14px;
+  border: 2px solid rgba(255,255,255,.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin .7s linear infinite;
+  flex-shrink: 0;
+}
+
+/* ── Sidebar logout button ───────────────────────────────────────────────── */
+.sb-logout-btn {
+  display: flex; align-items: center; gap: 8px;
+  width: 100%; padding: 7px 10px;
+  background: transparent;
+  border: 1px solid rgba(248,113,113,.18);
+  border-radius: 7px;
+  color: rgba(248,113,113,.7);
+  font-size: 12px; font-weight: 500; cursor: pointer;
+  transition: background .15s, color .15s, border-color .15s;
+  margin-left: auto;
+}
+.sb-logout-btn:hover {
+  background: rgba(248,113,113,.1);
+  color: #f87171; border-color: rgba(248,113,113,.35);
+}
