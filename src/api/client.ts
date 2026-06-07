@@ -1,5 +1,10 @@
 const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "";
 
+export interface ConversationMessage {
+  role: "user" | "assistant";
+  content: string;
+}
+
 export interface CandidateMatch {
   id: string;
   name: string;
@@ -57,6 +62,87 @@ export interface IndexResponse {
   message: string;
 }
 
+/** Callbacks for the streaming search response. */
+export interface StreamCallbacks {
+  onCandidates: (candidates: CandidateMatch[]) => void;
+  onDelta: (text: string) => void;
+  onDone: () => void;
+  onError: (message: string) => void;
+}
+
+/**
+ * Agentic streaming search. Sends query + conversation history to the agent
+ * endpoint and fires callbacks as SSE events arrive.
+ *
+ * Event order: onCandidates? → onDelta* → onDone  (or onError on failure)
+ */
+export async function searchTalentStream(
+  query: string,
+  history: ConversationMessage[],
+  callbacks: StreamCallbacks,
+  topK?: number,
+): Promise<void> {
+  let response: Response;
+  try {
+    response = await fetch(`${BASE_URL}/api/v1/search/stream`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ query, messages: history, top_k: topK ?? null }),
+    });
+  } catch {
+    callbacks.onError("Network error — could not reach the server.");
+    return;
+  }
+
+  if (!response.ok) {
+    try {
+      const err: ApiError = await response.json();
+      callbacks.onError(err.message ?? "Search failed.");
+    } catch {
+      callbacks.onError(`Server error (${response.status}).`);
+    }
+    return;
+  }
+
+  const reader = response.body?.getReader();
+  if (!reader) {
+    callbacks.onError("Streaming not supported by the server.");
+    return;
+  }
+
+  const decoder = new TextDecoder();
+  let buffer = "";
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split("\n");
+      buffer = lines.pop() ?? "";
+
+      for (const line of lines) {
+        if (!line.startsWith("data: ")) continue;
+        const raw = line.slice(6).trim();
+        if (!raw) continue;
+
+        try {
+          const event = JSON.parse(raw) as { type: string; [key: string]: unknown };
+          if (event.type === "candidates") callbacks.onCandidates(event.data as CandidateMatch[]);
+          else if (event.type === "delta") callbacks.onDelta(event.content as string);
+          else if (event.type === "done") callbacks.onDone();
+          else if (event.type === "error") callbacks.onError(event.message as string);
+        } catch {
+          // Ignore malformed SSE lines
+        }
+      }
+    }
+  } finally {
+    reader.releaseLock();
+  }
+}
+
 export async function uploadResume(file: File): Promise<UploadResponse> {
   const form = new FormData();
   form.append("file", file);
@@ -92,20 +178,4 @@ export async function indexCandidate(
     throw new Error(err.message ?? "Indexing failed");
   }
   return response.json() as Promise<IndexResponse>;
-}
-
-export async function searchTalent(
-  query: string,
-  topK?: number
-): Promise<SearchResponse> {
-  const response = await fetch(`${BASE_URL}/api/v1/search`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ query, top_k: topK }),
-  });
-  if (!response.ok) {
-    const err: ApiError = await response.json();
-    throw new Error(err.message ?? "Search failed");
-  }
-  return response.json() as Promise<SearchResponse>;
 }
