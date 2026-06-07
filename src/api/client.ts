@@ -143,7 +143,13 @@ export async function searchTalentStream(
   }
 }
 
-// ── Knowledge base dashboard API ─────────────────────────────────────────────
+// ── Knowledge base dashboard API ──────────────────────────────────────────────
+//
+// Architecture: two separate endpoints replace the old single GET /knowledge-base
+//   GET /knowledge-base/stats          — cached 5 min server-side; call once on mount
+//   GET /knowledge-base/candidates     — cursor-paginated, 20 records/page, O(1) per call
+//
+// The dashboard calls both in parallel on mount, then uses cursor-stack navigation.
 
 export interface CandidateRecord {
   candidate_id: string;
@@ -165,20 +171,39 @@ export interface KnowledgeBaseStats {
   avg_experience_years: number;
   last_added_at: string | null;
   top_skills: string[];
+  /** True when the pool exceeds 10 000 candidates and stats are from a sample. */
+  is_sampled: boolean;
 }
 
-export interface KnowledgeBaseResponse {
-  stats: KnowledgeBaseStats;
+export interface CandidatesPageResponse {
   candidates: CandidateRecord[];
+  /** Opaque cursor for the next page. null = last page. */
+  next_cursor: string | null;
+  /** Total profile count from stats cache. -1 = not yet computed. */
+  total: number;
 }
 
-export async function listKnowledgeBase(): Promise<KnowledgeBaseResponse> {
-  const response = await fetch(`${BASE_URL}/api/v1/knowledge-base`);
+export async function getKnowledgeBaseStats(): Promise<KnowledgeBaseStats> {
+  const response = await fetch(`${BASE_URL}/api/v1/knowledge-base/stats`);
   if (!response.ok) {
     const err: ApiError = await response.json();
-    throw new Error(err.message ?? "Failed to load knowledge base");
+    throw new Error(err.message ?? "Failed to load knowledge base stats");
   }
-  return response.json() as Promise<KnowledgeBaseResponse>;
+  return response.json() as Promise<KnowledgeBaseStats>;
+}
+
+export async function listCandidatesPage(
+  cursor?: string | null,
+  limit = 20,
+): Promise<CandidatesPageResponse> {
+  const params = new URLSearchParams({ limit: String(limit) });
+  if (cursor) params.set("cursor", cursor);
+  const response = await fetch(`${BASE_URL}/api/v1/knowledge-base/candidates?${params}`);
+  if (!response.ok) {
+    const err: ApiError = await response.json();
+    throw new Error(err.message ?? "Failed to load candidates");
+  }
+  return response.json() as Promise<CandidatesPageResponse>;
 }
 
 export async function getResumeUrl(candidateId: string): Promise<string> {

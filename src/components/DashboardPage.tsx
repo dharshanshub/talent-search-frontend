@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  listKnowledgeBase,
+  getKnowledgeBaseStats,
+  listCandidatesPage,
   deleteCandidate,
   getResumeUrl,
   type CandidateRecord,
@@ -21,6 +22,8 @@ const SENIORITY_COLORS: Record<string, string> = {
   Staff: "#8b5cf6",
   Principal: "#ec4899",
 };
+
+const PAGE_SIZE = 20;
 
 function formatDate(iso: string): string {
   if (!iso) return "—";
@@ -47,28 +50,18 @@ function StatCard({ label, value, sub }: { label: string; value: string | number
 }
 
 function DeleteConfirmModal({
-  name,
-  onConfirm,
-  onCancel,
-  loading,
-}: {
-  name: string;
-  onConfirm: () => void;
-  onCancel: () => void;
-  loading: boolean;
-}) {
+  name, onConfirm, onCancel, loading,
+}: { name: string; onConfirm: () => void; onCancel: () => void; loading: boolean }) {
   return (
     <div className="modal-backdrop" onClick={onCancel}>
       <div className="modal-box" onClick={(e) => e.stopPropagation()}>
         <div className="modal-title">Remove candidate</div>
         <div className="modal-body">
-          Remove <strong>{name}</strong> from the knowledge base? This deletes all indexed data
-          and the source PDF from storage. This cannot be undone.
+          Remove <strong>{name}</strong> from the knowledge base? This deletes all indexed
+          data and the source PDF from storage. This cannot be undone.
         </div>
         <div className="modal-actions">
-          <button className="modal-btn-cancel" onClick={onCancel} disabled={loading}>
-            Cancel
-          </button>
+          <button className="modal-btn-cancel" onClick={onCancel} disabled={loading}>Cancel</button>
           <button className="modal-btn-delete" onClick={onConfirm} disabled={loading}>
             {loading ? "Removing…" : "Remove"}
           </button>
@@ -79,77 +72,112 @@ function DeleteConfirmModal({
 }
 
 export function DashboardPage() {
-  const [records, setRecords] = useState<CandidateRecord[]>([]);
+  // ── Stats (separate, cached server-side) ─────────────────────────────────
   const [stats, setStats] = useState<KnowledgeBaseStats | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [statsLoading, setStatsLoading] = useState(true);
+
+  // ── Paginated candidates ──────────────────────────────────────────────────
+  const [records, setRecords] = useState<CandidateRecord[]>([]);
+  const [pageLoading, setPageLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Cursor stack: index 0 = first page (cursor=null), pushed on "next", popped on "prev"
+  const [cursorStack, setCursorStack] = useState<(string | null)[]>([null]);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  // Server-reported total (-1 = not yet known)
+  const [serverTotal, setServerTotal] = useState(-1);
+
+  // ── Table controls ────────────────────────────────────────────────────────
   const [sortCol, setSortCol] = useState<SortCol>("indexed_at");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
   const [filterText, setFilterText] = useState("");
   const [filterSeniority, setFilterSeniority] = useState("All");
 
+  // ── Delete + resume ───────────────────────────────────────────────────────
   const [deleteTarget, setDeleteTarget] = useState<CandidateRecord | null>(null);
   const [deleting, setDeleting] = useState(false);
-
-  // Per-row resume loading state — keyed by candidate_id
   const [resumeLoading, setResumeLoading] = useState<Record<string, boolean>>({});
 
-  const handleViewResume = useCallback(async (candidateId: string) => {
-    setResumeLoading((prev) => ({ ...prev, [candidateId]: true }));
+  // Guard against setting state after unmount
+  const mounted = useRef(true);
+  useEffect(() => { return () => { mounted.current = false; }; }, []);
+
+  // ── Loaders ───────────────────────────────────────────────────────────────
+
+  const loadStats = useCallback(async () => {
+    setStatsLoading(true);
     try {
-      const url = await getResumeUrl(candidateId);
-      window.open(url, "_blank", "noopener,noreferrer");
+      const s = await getKnowledgeBaseStats();
+      if (!mounted.current) return;
+      setStats(s);
+      setServerTotal(s.total_profiles);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not load resume");
+      if (!mounted.current) return;
+      // Stats failure is non-fatal — candidates can still load
+      logger.warn?.("stats_load_failed", err);
     } finally {
-      setResumeLoading((prev) => ({ ...prev, [candidateId]: false }));
+      if (mounted.current) setStatsLoading(false);
     }
   }, []);
 
-  const [page, setPage] = useState(1);
-  const PAGE_SIZE = 20;
-
-  const load = async () => {
-    setLoading(true);
+  const loadPage = useCallback(async (cursor: string | null) => {
+    setPageLoading(true);
     setError(null);
     try {
-      const data = await listKnowledgeBase();
-      setRecords(data.candidates);
-      setStats(data.stats);
+      const page = await listCandidatesPage(cursor, PAGE_SIZE);
+      if (!mounted.current) return;
+      setRecords(page.candidates);
+      setNextCursor(page.next_cursor);
+      // Update total from page response if stats haven't loaded yet
+      if (page.total >= 0) setServerTotal((prev) => (prev < 0 ? page.total : prev));
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load knowledge base");
+      if (!mounted.current) return;
+      setError(err instanceof Error ? err.message : "Failed to load candidates");
     } finally {
-      setLoading(false);
+      if (mounted.current) setPageLoading(false);
     }
-  };
+  }, []);
 
-  useEffect(() => { load(); }, []);
+  // Load stats + first page in parallel on mount
+  useEffect(() => {
+    Promise.all([loadStats(), loadPage(null)]);
+  }, []);
+
+  // ── Pagination ────────────────────────────────────────────────────────────
+
+  const currentPage = cursorStack.length; // 1-indexed
+
+  const handleNext = useCallback(() => {
+    if (!nextCursor) return;
+    const newStack = [...cursorStack, nextCursor];
+    setCursorStack(newStack);
+    loadPage(nextCursor);
+  }, [cursorStack, nextCursor, loadPage]);
+
+  const handlePrev = useCallback(() => {
+    if (cursorStack.length <= 1) return;
+    const newStack = cursorStack.slice(0, -1);
+    setCursorStack(newStack);
+    loadPage(newStack[newStack.length - 1]);
+  }, [cursorStack, loadPage]);
+
+  const handleFirst = useCallback(() => {
+    setCursorStack([null]);
+    loadPage(null);
+  }, [loadPage]);
+
+  const handleRefresh = useCallback(() => {
+    setCursorStack([null]);
+    Promise.all([loadStats(), loadPage(null)]);
+  }, [loadStats, loadPage]);
+
+  // ── Sort / filter on current page ─────────────────────────────────────────
 
   const handleSort = (col: SortCol) => {
     if (sortCol === col) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
     else { setSortCol(col); setSortDir("asc"); }
-    setPage(1);
   };
 
-  useEffect(() => { setPage(1); }, [filterText, filterSeniority]);
-
-  const handleDelete = async () => {
-    if (!deleteTarget) return;
-    setDeleting(true);
-    try {
-      await deleteCandidate(deleteTarget.candidate_id);
-      setRecords((prev) => prev.filter((r) => r.candidate_id !== deleteTarget.candidate_id));
-      setStats((prev) => prev ? { ...prev, total_profiles: prev.total_profiles - 1 } : prev);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Delete failed");
-    } finally {
-      setDeleting(false);
-      setDeleteTarget(null);
-    }
-  };
-
-  // ── Filtered + sorted rows ────────────────────────────────────────────────
   const filtered = useMemo(() =>
     records
       .filter((r) => {
@@ -169,45 +197,89 @@ export function DashboardPage() {
         if (av > bv) return sortDir === "asc" ? 1 : -1;
         return 0;
       }),
-    [records, filterText, filterSeniority, sortCol, sortDir]
+    [records, filterText, filterSeniority, sortCol, sortDir],
   );
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const safePage = Math.min(page, totalPages);
-  const pageStart = (safePage - 1) * PAGE_SIZE;
-  const paginated = filtered.slice(pageStart, pageStart + PAGE_SIZE);
+  // ── Delete ────────────────────────────────────────────────────────────────
 
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    try {
+      await deleteCandidate(deleteTarget.candidate_id);
+      setRecords((prev) => prev.filter((r) => r.candidate_id !== deleteTarget.candidate_id));
+      // Decrement local total — server cache was invalidated by the delete endpoint
+      setServerTotal((prev) => Math.max(0, prev - 1));
+      setStats((prev) => prev ? { ...prev, total_profiles: Math.max(0, prev.total_profiles - 1) } : prev);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Delete failed");
+    } finally {
+      setDeleting(false);
+      setDeleteTarget(null);
+    }
+  };
+
+  // ── Resume ────────────────────────────────────────────────────────────────
+
+  const handleViewResume = useCallback(async (candidateId: string) => {
+    setResumeLoading((prev) => ({ ...prev, [candidateId]: true }));
+    try {
+      const url = await getResumeUrl(candidateId);
+      window.open(url, "_blank", "noopener,noreferrer");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not load resume");
+    } finally {
+      setResumeLoading((prev) => ({ ...prev, [candidateId]: false }));
+    }
+  }, []);
+
+  // ── Pagination display helpers ─────────────────────────────────────────────
+  const totalKnown = serverTotal >= 0;
+  const pageStart = (currentPage - 1) * PAGE_SIZE + 1;
+  const pageEnd = pageStart + filtered.length - 1;
+  const totalPages = totalKnown ? Math.ceil(serverTotal / PAGE_SIZE) : null;
   const seniorityOptions = ["All", "Junior", "Mid-Level", "Senior", "Staff", "Principal"];
+
+  const isFiltering = filterText !== "" || filterSeniority !== "All";
 
   return (
     <div className="dash-pane">
 
-      {/* ── Header ───────────────────────────────────────────────────────── */}
+      {/* ── Header ─────────────────────────────────────────────────────────── */}
       <div className="dash-header">
         <div className="dash-header-left">
           <div className="dash-header-title">Knowledge Base</div>
-          <div className="dash-header-sub">Manage your indexed talent pool</div>
+          <div className="dash-header-sub">
+            {totalKnown
+              ? `${serverTotal.toLocaleString()} profiles · paginated ${PAGE_SIZE}/page`
+              : "Manage your indexed talent pool"}
+          </div>
         </div>
-        <button className="dash-refresh-btn" onClick={load} disabled={loading} title="Refresh">
-          <RefreshIcon spinning={loading} />
+        <button className="dash-refresh-btn" onClick={handleRefresh} disabled={pageLoading || statsLoading} title="Refresh">
+          <RefreshIcon spinning={pageLoading || statsLoading} />
           Refresh
         </button>
       </div>
 
       {error && <div className="dash-error">{error}</div>}
 
-      {/* ── Stats row ────────────────────────────────────────────────────── */}
-      {stats && (
+      {/* ── Stats row ──────────────────────────────────────────────────────── */}
+      {statsLoading && !stats ? (
+        <div className="dash-stats-loading">
+          <div className="dash-spinner" style={{ width: 16, height: 16 }} />
+          Computing pool stats…
+        </div>
+      ) : stats ? (
         <div className="dash-stats-row">
           <StatCard
             label="Profiles in pool"
-            value={stats.total_profiles}
+            value={stats.total_profiles.toLocaleString()}
             sub={stats.last_added_at ? `Last added ${formatDate(stats.last_added_at)}` : undefined}
           />
           <StatCard
             label="Avg. experience"
             value={`${stats.avg_experience_years} yrs`}
-            sub="across all profiles"
+            sub={stats.is_sampled ? "based on sample" : "across all profiles"}
           />
           <div className="dash-stat-card dash-seniority-card">
             <div className="dash-stat-label">Seniority mix</div>
@@ -238,13 +310,13 @@ export function DashboardPage() {
             </div>
           </div>
         </div>
-      )}
+      ) : null}
 
-      {/* ── Controls ─────────────────────────────────────────────────────── */}
+      {/* ── Controls ───────────────────────────────────────────────────────── */}
       <div className="dash-controls">
         <input
           className="dash-search-input"
-          placeholder="Search by name or title…"
+          placeholder="Filter by name or title on this page…"
           value={filterText}
           onChange={(e) => setFilterText(e.target.value)}
         />
@@ -258,19 +330,21 @@ export function DashboardPage() {
           ))}
         </select>
         <span className="dash-result-count">
-          {filtered.length === records.length
-            ? `${records.length} profiles`
-            : `${filtered.length} of ${records.length} profiles`}
+          {isFiltering
+            ? `${filtered.length} match${filtered.length !== 1 ? "es" : ""} on this page`
+            : totalKnown
+            ? `${serverTotal.toLocaleString()} total profiles`
+            : `${records.length} loaded`}
         </span>
       </div>
 
-      {/* ── Table ────────────────────────────────────────────────────────── */}
-      {loading ? (
+      {/* ── Table ──────────────────────────────────────────────────────────── */}
+      {pageLoading && records.length === 0 ? (
         <div className="dash-loading">
           <div className="dash-spinner" />
-          Loading knowledge base…
+          Loading candidates…
         </div>
-      ) : records.length === 0 ? (
+      ) : records.length === 0 && !pageLoading ? (
         <div className="dash-empty">
           <div className="dash-empty-icon"><DatabaseIcon /></div>
           <div className="dash-empty-title">No profiles indexed yet</div>
@@ -293,9 +367,9 @@ export function DashboardPage() {
               </tr>
             </thead>
             <tbody>
-              {paginated.map((r, i) => (
+              {filtered.map((r, i) => (
                 <tr key={r.candidate_id} className="dash-tr">
-                  <td className="dash-td dash-td-num">{pageStart + i + 1}</td>
+                  <td className="dash-td dash-td-num">{pageStart + i}</td>
                   <td className="dash-td dash-td-name">
                     <div className="dash-name">{r.name}</div>
                     {r.industries.length > 0 && (
@@ -307,8 +381,10 @@ export function DashboardPage() {
                   <td className="dash-td">
                     <span
                       className="dash-seniority-badge"
-                      style={{ borderColor: SENIORITY_COLORS[r.seniority] ?? "#6366f1",
-                               color: SENIORITY_COLORS[r.seniority] ?? "#6366f1" }}
+                      style={{
+                        borderColor: SENIORITY_COLORS[r.seniority] ?? "#6366f1",
+                        color: SENIORITY_COLORS[r.seniority] ?? "#6366f1",
+                      }}
                     >
                       {r.seniority}
                     </span>
@@ -348,40 +424,43 @@ export function DashboardPage() {
               ))}
             </tbody>
           </table>
-          {totalPages > 1 && (
-            <div className="dash-pagination">
-              <button
-                className="dash-page-btn"
-                onClick={() => setPage(1)}
-                disabled={safePage === 1}
-                title="First page"
-              >«</button>
-              <button
-                className="dash-page-btn"
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                disabled={safePage === 1}
-                title="Previous page"
-              >‹</button>
-              <span className="dash-page-info">
-                Page {safePage} of {totalPages}
-                <span className="dash-page-range">
-                  &nbsp;({pageStart + 1}–{Math.min(pageStart + PAGE_SIZE, filtered.length)} of {filtered.length})
-                </span>
-              </span>
-              <button
-                className="dash-page-btn"
-                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                disabled={safePage === totalPages}
-                title="Next page"
-              >›</button>
-              <button
-                className="dash-page-btn"
-                onClick={() => setPage(totalPages)}
-                disabled={safePage === totalPages}
-                title="Last page"
-              >»</button>
-            </div>
-          )}
+
+          {/* ── Pagination controls ─────────────────────────────────────────── */}
+          <div className="dash-pagination">
+            <button
+              className="dash-page-btn"
+              onClick={handleFirst}
+              disabled={currentPage === 1 || pageLoading}
+              title="First page"
+            >«</button>
+            <button
+              className="dash-page-btn"
+              onClick={handlePrev}
+              disabled={currentPage === 1 || pageLoading}
+              title="Previous page"
+            >‹</button>
+
+            <span className="dash-page-info">
+              {pageLoading ? (
+                "Loading…"
+              ) : (
+                <>
+                  Page {currentPage}{totalPages ? ` of ${totalPages}` : ""}
+                  <span className="dash-page-range">
+                    &nbsp;· showing {isFiltering ? filtered.length : `${pageStart}–${pageEnd}`}
+                    {totalKnown && !isFiltering ? ` of ${serverTotal.toLocaleString()}` : ""}
+                  </span>
+                </>
+              )}
+            </span>
+
+            <button
+              className="dash-page-btn"
+              onClick={handleNext}
+              disabled={!nextCursor || pageLoading}
+              title="Next page"
+            >›</button>
+          </div>
         </div>
       )}
 
@@ -402,14 +481,14 @@ export function DashboardPage() {
 function Th({
   col, active, dir, onSort, children,
 }: {
-  col: SortCol;
-  active: SortCol;
-  dir: SortDir;
-  onSort: (c: SortCol) => void;
-  children: React.ReactNode;
+  col: SortCol; active: SortCol; dir: SortDir;
+  onSort: (c: SortCol) => void; children: React.ReactNode;
 }) {
   return (
-    <th className={`dash-th dash-th-sortable${col === active ? " sorted" : ""}`} onClick={() => onSort(col)}>
+    <th
+      className={`dash-th dash-th-sortable${col === active ? " sorted" : ""}`}
+      onClick={() => onSort(col)}
+    >
       {children} <SortArrow col={col} active={active} dir={dir} />
     </th>
   );
@@ -456,12 +535,13 @@ function DatabaseIcon() {
 
 function RefreshIcon({ spinning }: { spinning: boolean }) {
   return (
-    <svg
-      width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"
-      style={{ animation: spinning ? "spin 1s linear infinite" : "none" }}
-    >
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"
+      style={{ animation: spinning ? "spin 1s linear infinite" : "none" }}>
       <polyline points="23 4 23 10 17 10"/>
       <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
     </svg>
   );
 }
+
+// Minimal console shim so logger.warn doesn't throw in browser
+const logger = { warn: (..._args: unknown[]) => {} };
