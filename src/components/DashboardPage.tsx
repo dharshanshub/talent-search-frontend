@@ -321,54 +321,12 @@ export function DashboardPage() {
             </div>
           </div>
 
-          {/* Experience range distribution */}
-          <div className="dash-stat-card dash-seniority-card">
-            <div className="dash-stat-label">Experience ranges</div>
-            <div className="dash-seniority-bars">
-              {Object.entries(stats.experience_distribution).map(([bucket, count]) => (
-                <div key={bucket} className="dash-seniority-row">
-                  <span className="dash-seniority-label">{bucket}</span>
-                  <div className="dash-seniority-bar-wrap">
-                    <div
-                      className="dash-seniority-bar-fill"
-                      style={{
-                        width: `${Math.round((count / stats.total_profiles) * 100)}%`,
-                        background: "#0ea5e9",
-                      }}
-                    />
-                  </div>
-                  <span className="dash-seniority-count">{count}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
           {/* Top skills */}
           <div className="dash-stat-card">
             <div className="dash-stat-label">Top skills in pool</div>
             <div className="dash-top-skills">
               {stats.top_skills.slice(0, 8).map((skill) => (
                 <span key={skill} className="dash-skill-chip">{skill}</span>
-              ))}
-            </div>
-          </div>
-
-          {/* Top locations */}
-          <div className="dash-stat-card">
-            <div className="dash-stat-label">Top locations</div>
-            <div className="dash-top-skills">
-              {stats.top_locations.map((loc) => (
-                <span key={loc} className="dash-skill-chip dash-chip-loc">{loc}</span>
-              ))}
-            </div>
-          </div>
-
-          {/* Top industries */}
-          <div className="dash-stat-card">
-            <div className="dash-stat-label">Industries represented</div>
-            <div className="dash-top-skills">
-              {stats.top_industries.map((ind) => (
-                <span key={ind} className="dash-skill-chip dash-chip-ind">{ind}</span>
               ))}
             </div>
           </div>
