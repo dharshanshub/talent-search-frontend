@@ -1053,6 +1053,8 @@ html, body, #root {
 
 .rd-body { flex: 1; overflow: hidden; background: #080e1c; display: flex; flex-direction: column; }
 .rd-iframe { width: 100%; height: 100%; border: none; display: block; }
+.rd-loading { flex: 1; display: flex; align-items: center; justify-content: center; color: rgba(148,163,184,.45); font-size: 13px; }
+.rd-load-error { flex: 1; display: flex; align-items: center; justify-content: center; color: #f87171; font-size: 13px; padding: 24px; text-align: center; }
 
 /* ── Screen Drawer ───────────────────────────────────────────────────────── */
 .sc-panel { width: 640px; }
