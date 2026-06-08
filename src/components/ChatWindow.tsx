@@ -20,13 +20,6 @@ const EXAMPLES = [
   { tag: "Mobile",    text: "Mid-level Flutter developer based in Singapore" },
 ];
 
-function SearchIcon({ size = 30, color = "#6366f1" }: { size?: number; color?: string }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.6">
-      <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
-    </svg>
-  );
-}
 
 function LogoMark() {
   return (
