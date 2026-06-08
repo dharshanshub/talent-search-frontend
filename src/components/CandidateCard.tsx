@@ -13,23 +13,23 @@ const AVATAR_BG = [
 ];
 const avatarBg = (name: string) => AVATAR_BG[name.charCodeAt(0) % AVATAR_BG.length];
 
-// Skill chip colour palette (light bg + matching border + text)
+// Skill chip colour palette (dark theme)
 const CHIP_STYLES = [
-  { bg: "#eef2ff", border: "#c7d2fe", color: "#4338ca" },
-  { bg: "#f0fdf4", border: "#bbf7d0", color: "#166534" },
-  { bg: "#fff7ed", border: "#fed7aa", color: "#c2410c" },
-  { bg: "#fdf4ff", border: "#e9d5ff", color: "#7e22ce" },
-  { bg: "#f0f9ff", border: "#bae6fd", color: "#0369a1" },
-  { bg: "#fff1f2", border: "#fecdd3", color: "#be123c" },
-  { bg: "#f0fdfa", border: "#99f6e4", color: "#0f766e" },
+  { bg: "rgba(99,102,241,0.14)",  border: "rgba(99,102,241,0.3)",  color: "#a5b4fc" },
+  { bg: "rgba(52,211,153,0.12)",  border: "rgba(52,211,153,0.28)", color: "#6ee7b7" },
+  { bg: "rgba(251,191,36,0.12)",  border: "rgba(251,191,36,0.28)", color: "#fcd34d" },
+  { bg: "rgba(167,139,250,0.14)", border: "rgba(167,139,250,0.3)", color: "#c4b5fd" },
+  { bg: "rgba(34,211,238,0.12)",  border: "rgba(34,211,238,0.28)", color: "#67e8f9" },
+  { bg: "rgba(248,113,113,0.12)", border: "rgba(248,113,113,0.28)", color: "#fca5a5" },
+  { bg: "rgba(45,212,191,0.12)",  border: "rgba(45,212,191,0.28)", color: "#5eead4" },
 ];
 const chipStyle = (i: number) => CHIP_STYLES[i % CHIP_STYLES.length];
 
-// Score → colour scheme
+// Score → colour scheme (dark theme)
 function scoreScheme(score: number) {
-  if (score >= 0.82) return { stripe: "#059669", pill: { bg: "#ecfdf5", border: "#a7f3d0", color: "#065f46" } };
-  if (score >= 0.68) return { stripe: "#d97706", pill: { bg: "#fffbeb", border: "#fde68a", color: "#92400e" } };
-  return { stripe: "#6366f1", pill: { bg: "#eef2ff", border: "#c7d2fe", color: "#3730a3" } };
+  if (score >= 0.82) return { stripe: "#34d399", pill: { bg: "rgba(52,211,153,0.12)",  border: "rgba(52,211,153,0.3)",  color: "#6ee7b7" } };
+  if (score >= 0.68) return { stripe: "#fbbf24", pill: { bg: "rgba(251,191,36,0.12)",  border: "rgba(251,191,36,0.3)",  color: "#fcd34d" } };
+  return                     { stripe: "#818cf8", pill: { bg: "rgba(129,140,248,0.12)", border: "rgba(129,140,248,0.3)", color: "#c4b5fd" } };
 }
 
 const initials = (name: string) =>
@@ -81,19 +81,19 @@ export function CandidateCard({ candidate, rank, onViewResume }: Props) {
         {/* meta */}
         <div className="c-meta">
           <div className="c-meta-item">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ color: "#94a3b8" }}>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ color: "rgba(221,230,255,0.35)" }}>
               <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
             </svg>
             {candidate.location}
           </div>
           <div className="c-meta-item">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ color: "#94a3b8" }}>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ color: "rgba(221,230,255,0.35)" }}>
               <rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
             </svg>
             {candidate.years_experience} yrs experience
           </div>
           <div className="c-meta-item">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ color: "#94a3b8" }}>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ color: "rgba(221,230,255,0.35)" }}>
               <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
             </svg>
             <span title={fmtDate(candidate.last_updated)}>{relTime(candidate.last_updated)}</span>
@@ -111,7 +111,7 @@ export function CandidateCard({ candidate, rank, onViewResume }: Props) {
             );
           })}
           {candidate.skills.length > 9 && (
-            <span className="c-chip" style={{ background: "#f8fafc", borderColor: "#e2e8f0", color: "#94a3b8" }}>
+            <span className="c-chip" style={{ background: "rgba(255,255,255,0.06)", borderColor: "rgba(255,255,255,0.12)", color: "rgba(221,230,255,0.4)" }}>
               +{candidate.skills.length - 9}
             </span>
           )}
