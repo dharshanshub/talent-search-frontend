@@ -30,9 +30,49 @@ function SearchIcon({ size = 30, color = "#6366f1" }: { size?: number; color?: s
 
 function LogoMark() {
   return (
-    <svg width="19" height="19" viewBox="0 0 20 20" fill="none" style={{ position: "relative", zIndex: 1 }}>
-      <path d="M10 2L3 7v6l7 5 7-5V7L10 2z" fill="white" fillOpacity=".97" />
-      <path d="M10 2v14M3 7l7 3 7-3" stroke="white" strokeWidth="1.3" strokeOpacity=".4" />
+    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" style={{ position: "relative", zIndex: 1 }}>
+      <path d="M12 2L21 7V17L12 22L3 17V7L12 2Z" stroke="white" strokeWidth="1.4" strokeOpacity=".6" fill="none"/>
+      <circle cx="12" cy="12" r="2.5" fill="white"/>
+      <line x1="12" y1="9.4" x2="12" y2="4" stroke="white" strokeWidth="1" strokeOpacity=".75"/>
+      <line x1="14.2" y1="10.7" x2="19.2" y2="7.8" stroke="white" strokeWidth="1" strokeOpacity=".75"/>
+      <line x1="14.2" y1="13.3" x2="19.2" y2="16.2" stroke="white" strokeWidth="1" strokeOpacity=".75"/>
+      <line x1="12" y1="14.6" x2="12" y2="20" stroke="white" strokeWidth="1" strokeOpacity=".75"/>
+      <line x1="9.8" y1="13.3" x2="4.8" y2="16.2" stroke="white" strokeWidth="1" strokeOpacity=".75"/>
+      <line x1="9.8" y1="10.7" x2="4.8" y2="7.8" stroke="white" strokeWidth="1" strokeOpacity=".75"/>
+      <circle cx="12" cy="3.5" r="1.4" fill="white" fillOpacity=".9"/>
+      <circle cx="19.8" cy="7.8" r="1.4" fill="white" fillOpacity=".9"/>
+      <circle cx="19.8" cy="16.2" r="1.4" fill="white" fillOpacity=".9"/>
+      <circle cx="12" cy="20.5" r="1.4" fill="white" fillOpacity=".9"/>
+      <circle cx="4.2" cy="16.2" r="1.4" fill="white" fillOpacity=".9"/>
+      <circle cx="4.2" cy="7.8" r="1.4" fill="white" fillOpacity=".9"/>
+    </svg>
+  );
+}
+
+function EmptyHeroIcon() {
+  return (
+    <svg width="42" height="42" viewBox="0 0 24 24" fill="none">
+      <defs>
+        <linearGradient id="heroGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#22d3ee"/>
+          <stop offset="50%" stopColor="#818cf8"/>
+          <stop offset="100%" stopColor="#f472b6"/>
+        </linearGradient>
+      </defs>
+      <path d="M12 2L21 7V17L12 22L3 17V7L12 2Z" stroke="url(#heroGrad)" strokeWidth="1.4" fill="none"/>
+      <circle cx="12" cy="12" r="2.8" fill="url(#heroGrad)"/>
+      <line x1="12" y1="9.1" x2="12" y2="4" stroke="url(#heroGrad)" strokeWidth="1.1" strokeOpacity=".9"/>
+      <line x1="14.4" y1="10.55" x2="19.4" y2="7.65" stroke="url(#heroGrad)" strokeWidth="1.1" strokeOpacity=".9"/>
+      <line x1="14.4" y1="13.45" x2="19.4" y2="16.35" stroke="url(#heroGrad)" strokeWidth="1.1" strokeOpacity=".9"/>
+      <line x1="12" y1="14.9" x2="12" y2="20" stroke="url(#heroGrad)" strokeWidth="1.1" strokeOpacity=".9"/>
+      <line x1="9.6" y1="13.45" x2="4.6" y2="16.35" stroke="url(#heroGrad)" strokeWidth="1.1" strokeOpacity=".9"/>
+      <line x1="9.6" y1="10.55" x2="4.6" y2="7.65" stroke="url(#heroGrad)" strokeWidth="1.1" strokeOpacity=".9"/>
+      <circle cx="12" cy="3.5" r="1.6" fill="url(#heroGrad)"/>
+      <circle cx="20" cy="7.8" r="1.6" fill="url(#heroGrad)"/>
+      <circle cx="20" cy="16.2" r="1.6" fill="url(#heroGrad)"/>
+      <circle cx="12" cy="20.5" r="1.6" fill="url(#heroGrad)"/>
+      <circle cx="4" cy="16.2" r="1.6" fill="url(#heroGrad)"/>
+      <circle cx="4" cy="7.8" r="1.6" fill="url(#heroGrad)"/>
     </svg>
   );
 }
@@ -182,7 +222,8 @@ export function ChatWindow({ sessionId, initialMessages, onMessagesChange }: Pro
       <div className="messages">
         {isEmpty ? (
           <div className="empty-state">
-            <div className="empty-hero"><SearchIcon /></div>
+            <div className="empty-hero"><EmptyHeroIcon /></div>
+            <div className="empty-eyebrow">AI-Powered Talent Search</div>
             <div className="empty-title">Find your ideal candidate</div>
             <div className="empty-subtitle">
               Describe the candidate you need in plain English. TalentAI uses semantic
