@@ -72,9 +72,21 @@ export function LoginPage() {
 
 function LogoMark() {
   return (
-    <svg width="36" height="36" viewBox="0 0 20 20" fill="none">
-      <path d="M10 2L3 7v6l7 5 7-5V7L10 2z" fill="white" fillOpacity=".95" />
-      <path d="M10 2v14M3 7l7 3 7-3" stroke="white" strokeWidth="1.2" strokeOpacity=".45" />
+    <svg width="38" height="38" viewBox="0 0 24 24" fill="none">
+      <path d="M12 2L21 7V17L12 22L3 17V7L12 2Z" stroke="white" strokeWidth="1.4" strokeOpacity=".65" fill="none"/>
+      <circle cx="12" cy="12" r="2.8" fill="white"/>
+      <line x1="12" y1="9.1" x2="12" y2="4" stroke="white" strokeWidth="1.1" strokeOpacity=".8"/>
+      <line x1="14.4" y1="10.55" x2="19.4" y2="7.65" stroke="white" strokeWidth="1.1" strokeOpacity=".8"/>
+      <line x1="14.4" y1="13.45" x2="19.4" y2="16.35" stroke="white" strokeWidth="1.1" strokeOpacity=".8"/>
+      <line x1="12" y1="14.9" x2="12" y2="20" stroke="white" strokeWidth="1.1" strokeOpacity=".8"/>
+      <line x1="9.6" y1="13.45" x2="4.6" y2="16.35" stroke="white" strokeWidth="1.1" strokeOpacity=".8"/>
+      <line x1="9.6" y1="10.55" x2="4.6" y2="7.65" stroke="white" strokeWidth="1.1" strokeOpacity=".8"/>
+      <circle cx="12" cy="3.5" r="1.6" fill="white" fillOpacity=".95"/>
+      <circle cx="20" cy="7.8" r="1.6" fill="white" fillOpacity=".95"/>
+      <circle cx="20" cy="16.2" r="1.6" fill="white" fillOpacity=".95"/>
+      <circle cx="12" cy="20.5" r="1.6" fill="white" fillOpacity=".95"/>
+      <circle cx="4" cy="16.2" r="1.6" fill="white" fillOpacity=".95"/>
+      <circle cx="4" cy="7.8" r="1.6" fill="white" fillOpacity=".95"/>
     </svg>
   );
 }
