@@ -1,4 +1,6 @@
+import { useEffect, useState } from "react";
 import type { CandidateMatch } from "../api/client";
+import { useAuth } from "../context/AuthContext";
 
 interface Props {
   candidate: CandidateMatch;
@@ -49,10 +51,34 @@ function FileIcon() {
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "";
 
 export function ResumeDrawer({ candidate, onClose }: Props) {
+  const { token } = useAuth();
   const pct = Math.round(candidate.score * 100);
   const scheme = scoreScheme(candidate.score);
-  const resumeUrl = `${API_BASE}/api/v1/candidates/${candidate.id}/resume`;
-  const downloadUrl = `${resumeUrl}?dl=1`;
+  const resumeApiUrl = `${API_BASE}/api/v1/candidates/${candidate.id}/resume`;
+
+  const [blobUrl, setBlobUrl] = useState<string | null>(null);
+  const [fetchError, setFetchError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let objectUrl: string | null = null;
+    setFetchError(null);
+    setBlobUrl(null);
+
+    fetch(resumeApiUrl, { headers: { Authorization: `Bearer ${token}` } })
+      .then((res) => {
+        if (!res.ok) throw new Error(`Failed to load resume (${res.status})`);
+        return res.blob();
+      })
+      .then((blob) => {
+        objectUrl = URL.createObjectURL(blob);
+        setBlobUrl(objectUrl);
+      })
+      .catch((err: Error) => setFetchError(err.message));
+
+    return () => {
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    };
+  }, [resumeApiUrl, token]);
 
   return (
     <>
@@ -100,14 +126,21 @@ export function ResumeDrawer({ candidate, onClose }: Props) {
                 {candidate.id}_resume.pdf
               </div>
               <div className="rd-btn-group">
-                <a
-                  className="rd-btn rd-btn-download"
-                  href={downloadUrl}
-                  download={`${candidate.name.replace(/ /g, "_")}_resume.pdf`}
-                >
-                  <DownloadIcon />
-                  Download PDF
-                </a>
+                {blobUrl ? (
+                  <a
+                    className="rd-btn rd-btn-download"
+                    href={blobUrl}
+                    download={`${candidate.name.replace(/ /g, "_")}_resume.pdf`}
+                  >
+                    <DownloadIcon />
+                    Download PDF
+                  </a>
+                ) : (
+                  <button className="rd-btn rd-btn-download" disabled>
+                    <DownloadIcon />
+                    {fetchError ? "Unavailable" : "Loading…"}
+                  </button>
+                )}
                 <button className="rd-btn rd-btn-close" onClick={onClose}>
                   <CloseIcon />
                 </button>
@@ -118,11 +151,17 @@ export function ResumeDrawer({ candidate, onClose }: Props) {
 
         {/* ── PDF viewer ──────────────────────────── */}
         <div className="rd-body">
-          <iframe
-            className="rd-iframe"
-            src={resumeUrl}
-            title={`${candidate.name} Resume`}
-          />
+          {fetchError ? (
+            <div className="rd-load-error">{fetchError}</div>
+          ) : blobUrl ? (
+            <iframe
+              className="rd-iframe"
+              src={blobUrl}
+              title={`${candidate.name} Resume`}
+            />
+          ) : (
+            <div className="rd-loading">Loading resume…</div>
+          )}
         </div>
 
       </div>
