@@ -1399,22 +1399,16 @@ html, body, #root {
   width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px;
   margin-top: 20px; padding: 13px;
   font-family: var(--font); font-size: 14px; font-weight: 800; color: #fff;
-  background: linear-gradient(135deg, #22d3ee 0%, #818cf8 55%, #f472b6 100%);
+  background: linear-gradient(135deg, #22d3ee 0%, #818cf8 16.5%, #f472b6 33%, #0891b2 66%, #4f46e5 83%, #db2777 100%);
+  background-size: 200% 100%;
   border: none; border-radius: 10px; cursor: pointer;
-  transition: all .2s;
+  transition: background-position .35s ease, box-shadow .2s, transform .2s;
   box-shadow: 0 4px 20px rgba(34,211,238,.2), 0 4px 12px rgba(129,140,248,.2);
-  letter-spacing: .01em; position: relative; overflow: hidden;
+  letter-spacing: .01em;
 }
 
-.sc-index-btn::before {
-  content: ''; position: absolute; inset: 0;
-  background: linear-gradient(135deg, #0891b2 0%, #4f46e5 55%, #db2777 100%);
-  opacity: 0; transition: opacity .2s;
-}
-
-.sc-index-btn:hover:not(:disabled)::before { opacity: 1; }
-.sc-index-btn span, .sc-index-btn svg { position: relative; z-index: 1; }
-.sc-index-btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 6px 28px rgba(34,211,238,.3); }
+.sc-index-btn:hover:not(:disabled) { background-position: 100% 50%; transform: translateY(-1px); box-shadow: 0 6px 28px rgba(34,211,238,.3); }
+.sc-index-btn:active:not(:disabled) { transform: translateY(0); }
 .sc-index-btn:disabled { opacity: .5; cursor: not-allowed; transform: none; }
 
 .sc-btn-spinner {
@@ -1496,9 +1490,14 @@ html, body, #root {
 /* ── Dashboard ───────────────────────────────────────────────────────────── */
 .dash-pane {
   flex: 1; display: flex; flex-direction: column;
-  background: var(--bg); overflow: hidden;
-  background-image: radial-gradient(rgba(129,140,248,0.05) 1px, transparent 1px);
-  background-size: 28px 28px;
+  background: #0c1026; overflow: hidden;
+  position: relative;
+  background-image:
+    radial-gradient(120% 60% at 50% -10%, rgba(99,102,241,0.13) 0%, transparent 55%),
+    radial-gradient(50% 50% at 100% 0%, rgba(244,114,182,0.06) 0%, transparent 60%),
+    radial-gradient(rgba(129,140,248,0.05) 1px, transparent 1px);
+  background-size: 100% 100%, 100% 100%, 28px 28px;
+  background-attachment: fixed, fixed, scroll;
 }
 
 .dash-header {
@@ -1558,17 +1557,26 @@ html, body, #root {
 }
 
 .dash-stat-card {
-  background: rgba(255,255,255,.04);
-  backdrop-filter: blur(8px);
-  border: 1px solid rgba(255,255,255,.08);
-  border-radius: var(--radius); padding: 16px 18px;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.04) 0%, transparent 30%),
+    rgba(255,255,255,.035);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255,255,255,.09);
+  border-radius: var(--radius); padding: 17px 19px;
   position: relative; overflow: hidden;
-  transition: border-color .2s, box-shadow .2s;
+  transition: border-color .25s, box-shadow .25s, transform .25s;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.05);
+  animation: cardIn .45s cubic-bezier(.16,1,.3,1) both;
 }
+.dash-stat-card:nth-child(2) { animation-delay: .06s; }
+.dash-stat-card:nth-child(3) { animation-delay: .12s; }
+.dash-stat-card:nth-child(4) { animation-delay: .18s; }
 
 .dash-stat-card:hover {
-  border-color: rgba(129,140,248,.22);
-  box-shadow: 0 4px 20px rgba(129,140,248,.08);
+  border-color: rgba(129,140,248,.28);
+  box-shadow: 0 8px 28px rgba(129,140,248,.12), inset 0 1px 0 rgba(255,255,255,.06);
+  transform: translateY(-2px);
 }
 
 .dash-stat-card::before {
@@ -1580,9 +1588,10 @@ html, body, #root {
 .dash-stat-card:hover::before { opacity: 1; }
 
 .dash-stat-value {
-  font-size: 28px; font-weight: 800; line-height: 1;
+  font-size: 30px; font-weight: 900; line-height: 1; letter-spacing: -.5px;
   background: linear-gradient(135deg, #67e8f9 0%, #a5b4fc 55%, #f9a8d4 100%);
   -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  font-variant-numeric: tabular-nums;
 }
 
 .dash-stat-label { font-size: 11.5px; font-weight: 700; color: var(--text-2); margin-top: 6px; text-transform: uppercase; letter-spacing: .05em; }
@@ -1597,15 +1606,26 @@ html, body, #root {
   flex: 1; height: 5px; background: rgba(255,255,255,.08); border-radius: 3px; overflow: hidden;
 }
 
-.dash-seniority-bar-fill { height: 100%; border-radius: 3px; transition: width .5s ease; }
+.dash-seniority-bar-fill {
+  height: 100%; border-radius: 3px;
+  transition: width .6s cubic-bezier(.16,1,.3,1);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.25);
+  animation: barGrow .7s cubic-bezier(.16,1,.3,1) both;
+}
+@keyframes barGrow { from { transform: scaleX(0); transform-origin: left; } to { transform: scaleX(1); } }
 .dash-seniority-count { font-size: 11.5px; font-weight: 700; color: var(--text-2); width: 16px; text-align: right; }
 
 .dash-top-skills { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
 
 .dash-skill-chip {
-  padding: 3px 9px; border-radius: 20px; font-size: 11.5px; font-weight: 600;
+  padding: 3px 10px; border-radius: 20px; font-size: 11.5px; font-weight: 600;
   background: rgba(129,140,248,.12); color: #c4b5fd;
   border: 1px solid rgba(129,140,248,.25);
+  transition: transform .15s ease, background .15s ease, border-color .15s ease;
+}
+.dash-skill-chip:hover {
+  transform: translateY(-1px);
+  background: rgba(129,140,248,.2); border-color: rgba(129,140,248,.4);
 }
 
 /* Controls */
@@ -1850,27 +1870,36 @@ html, body, #root {
   flex: 0 0 56%;
   display: flex; flex-direction: column; justify-content: center;
   padding: 64px 72px;
-  background: #040d20;
+  background: #0d0717;
   position: relative; overflow: hidden;
-  border-right: 1px solid rgba(255,255,255,.07);
-  background-image: radial-gradient(rgba(99,102,241,.07) 1px, transparent 1px);
+  border-right: 1px solid rgba(167,139,250,.14);
+  background-image: radial-gradient(rgba(167,139,250,.07) 1px, transparent 1px);
   background-size: 24px 24px;
 }
 
 .login-hero::before {
   content: ''; position: absolute;
   width: 700px; height: 700px; border-radius: 50%;
-  background: radial-gradient(circle, rgba(34,211,238,.14) 0%, rgba(99,102,241,.09) 40%, transparent 65%);
+  background: radial-gradient(circle, rgba(34,211,238,.16) 0%, rgba(99,102,241,.1) 40%, transparent 65%);
   top: -300px; left: -200px;
-  animation: glowPulse 4s ease-in-out infinite;
+  animation: orbDriftA 16s ease-in-out infinite;
 }
 
 .login-hero::after {
   content: ''; position: absolute;
   width: 560px; height: 560px; border-radius: 50%;
-  background: radial-gradient(circle, rgba(244,114,182,.12) 0%, rgba(167,139,250,.08) 40%, transparent 65%);
+  background: radial-gradient(circle, rgba(244,114,182,.14) 0%, rgba(167,139,250,.09) 40%, transparent 65%);
   bottom: -220px; right: -80px;
-  animation: glowPulse 5s ease-in-out infinite reverse;
+  animation: orbDriftB 19s ease-in-out infinite;
+}
+
+@keyframes orbDriftA {
+  0%, 100% { transform: translate(0, 0) scale(1); opacity: .85; }
+  50%      { transform: translate(80px, 60px) scale(1.12); opacity: 1; }
+}
+@keyframes orbDriftB {
+  0%, 100% { transform: translate(0, 0) scale(1); opacity: .8; }
+  50%      { transform: translate(-70px, -50px) scale(1.15); opacity: 1; }
 }
 
 .login-hero-logo {
@@ -1879,8 +1908,16 @@ html, body, #root {
   border-radius: 20px;
   display: flex; align-items: center; justify-content: center;
   box-shadow: 0 8px 40px rgba(34,211,238,.35), 0 0 0 1px rgba(255,255,255,.15);
-  margin-bottom: 32px; animation: iconGlow 3s ease-in-out infinite;
+  margin-bottom: 32px; animation: iconGlow 3s ease-in-out infinite, fadeUp .5s ease both;
   position: relative; z-index: 1;
+}
+
+/* rotating conic glow ring behind the logo */
+.login-hero-logo::before {
+  content: ''; position: absolute; inset: -6px; border-radius: 26px; z-index: -1;
+  background: conic-gradient(from 0deg, #22d3ee, #818cf8, #f472b6, #22d3ee);
+  filter: blur(12px); opacity: .55;
+  animation: spin 6s linear infinite;
 }
 
 .login-hero-eyebrow {
@@ -1888,6 +1925,7 @@ html, body, #root {
   background: linear-gradient(135deg, #22d3ee, #818cf8);
   -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
   margin-bottom: 14px; position: relative; z-index: 1;
+  animation: fadeUp .5s ease .06s both;
 }
 
 .login-hero-title {
@@ -1895,21 +1933,35 @@ html, body, #root {
   background: linear-gradient(135deg, #e2f0ff 0%, #c4b5fd 50%, #f9a8d4 100%);
   -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
   margin-bottom: 18px; position: relative; z-index: 1;
+  animation: fadeUp .5s ease .12s both;
 }
 
 .login-hero-sub {
   font-size: 14.5px; color: rgba(148,163,184,.58); line-height: 1.72;
   max-width: 390px; margin-bottom: 42px; position: relative; z-index: 1;
+  animation: fadeUp .5s ease .18s both;
 }
 
 .login-hero-features { display: flex; flex-direction: column; gap: 16px; position: relative; z-index: 1; }
 
-.login-hero-feature { display: flex; align-items: center; gap: 14px; }
+.login-hero-feature {
+  display: flex; align-items: center; gap: 14px;
+  animation: fadeUp .5s ease both;
+}
+.login-hero-feature:nth-child(1) { animation-delay: .24s; }
+.login-hero-feature:nth-child(2) { animation-delay: .30s; }
+.login-hero-feature:nth-child(3) { animation-delay: .36s; }
 
 .login-hero-feature-icon {
   width: 40px; height: 40px; border-radius: 11px; flex-shrink: 0;
   display: flex; align-items: center; justify-content: center;
   background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.09);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.06);
+  transition: transform .18s ease, border-color .18s ease, background .18s ease;
+}
+.login-hero-feature:hover .login-hero-feature-icon {
+  transform: translateY(-2px) scale(1.05);
+  background: rgba(255,255,255,.08); border-color: rgba(129,140,248,.3);
 }
 
 .login-hero-feature-text { font-size: 13.5px; color: rgba(203,213,225,.62); line-height: 1.4; }
@@ -1920,6 +1972,7 @@ html, body, #root {
   margin-top: 44px; padding-top: 28px;
   border-top: 1px solid rgba(255,255,255,.07);
   position: relative; z-index: 1;
+  animation: fadeUp .5s ease .42s both;
 }
 
 .login-hero-stat { display: flex; flex-direction: column; gap: 3px; }
@@ -1948,13 +2001,16 @@ html, body, #root {
 
 .login-card {
   width: 100%; max-width: 400px;
-  background: rgba(8,14,30,.92);
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.03) 0%, transparent 22%),
+    rgba(8,14,30,.92);
   backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
   border: 1px solid rgba(255,255,255,.1);
   border-radius: 20px; padding: 40px 36px 36px;
   display: flex; flex-direction: column; align-items: center;
-  box-shadow: 0 32px 80px rgba(0,0,0,.7), 0 0 0 1px rgba(255,255,255,.05);
+  box-shadow: 0 32px 80px rgba(0,0,0,.7), 0 0 60px rgba(99,102,241,.1), inset 0 1px 0 rgba(255,255,255,.06);
   position: relative; z-index: 1;
+  animation: cardIn .55s cubic-bezier(.16,1,.3,1) both;
 }
 
 .login-card::before {
