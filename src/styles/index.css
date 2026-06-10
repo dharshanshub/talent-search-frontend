@@ -1399,22 +1399,16 @@ html, body, #root {
   width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px;
   margin-top: 20px; padding: 13px;
   font-family: var(--font); font-size: 14px; font-weight: 800; color: #fff;
-  background: linear-gradient(135deg, #22d3ee 0%, #818cf8 55%, #f472b6 100%);
+  background: linear-gradient(135deg, #22d3ee 0%, #818cf8 16.5%, #f472b6 33%, #0891b2 66%, #4f46e5 83%, #db2777 100%);
+  background-size: 200% 100%;
   border: none; border-radius: 10px; cursor: pointer;
-  transition: all .2s;
+  transition: background-position .35s ease, box-shadow .2s, transform .2s;
   box-shadow: 0 4px 20px rgba(34,211,238,.2), 0 4px 12px rgba(129,140,248,.2);
-  letter-spacing: .01em; position: relative; overflow: hidden;
+  letter-spacing: .01em;
 }
 
-.sc-index-btn::before {
-  content: ''; position: absolute; inset: 0;
-  background: linear-gradient(135deg, #0891b2 0%, #4f46e5 55%, #db2777 100%);
-  opacity: 0; transition: opacity .2s;
-}
-
-.sc-index-btn:hover:not(:disabled)::before { opacity: 1; }
-.sc-index-btn span, .sc-index-btn svg { position: relative; z-index: 1; }
-.sc-index-btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 6px 28px rgba(34,211,238,.3); }
+.sc-index-btn:hover:not(:disabled) { background-position: 100% 50%; transform: translateY(-1px); box-shadow: 0 6px 28px rgba(34,211,238,.3); }
+.sc-index-btn:active:not(:disabled) { transform: translateY(0); }
 .sc-index-btn:disabled { opacity: .5; cursor: not-allowed; transform: none; }
 
 .sc-btn-spinner {
