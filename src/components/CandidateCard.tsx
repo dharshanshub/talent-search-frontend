@@ -52,8 +52,8 @@ export function CandidateCard({ candidate, rank, onViewResume }: Props) {
   const { stripe, pill } = scoreScheme(candidate.score);
 
   return (
-    <div className="c-card">
-      <div className="c-stripe" style={{ background: stripe }} />
+    <div className="c-card" style={{ animationDelay: `${Math.min(rank - 1, 8) * 60}ms` }}>
+      <div className="c-stripe" style={{ background: stripe, color: stripe }} />
       <div className="c-body">
 
         {/* top row */}
