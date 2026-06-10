@@ -21,6 +21,57 @@ function EyeOffIcon() {
   );
 }
 
+function GradientLogoMark() {
+  return (
+    <svg width="42" height="42" viewBox="0 0 32 32" fill="none">
+      <defs>
+        <linearGradient id="loginBrandGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#22d3ee" />
+          <stop offset="52%" stopColor="#818cf8" />
+          <stop offset="100%" stopColor="#f472b6" />
+        </linearGradient>
+      </defs>
+      <g fill="none" stroke="url(#loginBrandGrad)">
+        <path d="M16 3L27 9.5V22.5L16 29L5 22.5V9.5L16 3Z" strokeWidth="1.9" strokeLinejoin="round" strokeOpacity="0.9" />
+        <g strokeWidth="1.4" strokeOpacity="0.8">
+          <line x1="16" y1="16" x2="16" y2="4.6" />
+          <line x1="16" y1="16" x2="25.6" y2="10.3" />
+          <line x1="16" y1="16" x2="25.6" y2="21.7" />
+          <line x1="16" y1="16" x2="16" y2="27.4" />
+          <line x1="16" y1="16" x2="6.4" y2="21.7" />
+          <line x1="16" y1="16" x2="6.4" y2="10.3" />
+        </g>
+      </g>
+      <g fill="url(#loginBrandGrad)">
+        <circle cx="16" cy="16" r="3.4" />
+        <circle cx="16" cy="4.6" r="2" />
+        <circle cx="25.6" cy="10.3" r="2" />
+        <circle cx="25.6" cy="21.7" r="2" />
+        <circle cx="16" cy="27.4" r="2" />
+        <circle cx="6.4" cy="21.7" r="2" />
+        <circle cx="6.4" cy="10.3" r="2" />
+      </g>
+    </svg>
+  );
+}
+
+function LockIcon() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="11" width="18" height="11" rx="2" />
+      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+    </svg>
+  );
+}
+
+function BoltIcon() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+      <path d="M13 2L4.5 13.5H11l-1 8.5L19.5 10H13z" />
+    </svg>
+  );
+}
+
 function SearchHeroIcon() {
   return (
     <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
@@ -115,10 +166,20 @@ export function LoginPage() {
 
       {/* ── Right form panel ──────────────────────────────────────────────── */}
       <div className="login-form-panel">
-        <div className="login-card">
-          <div className="login-card-logo"><LogoMark /></div>
-          <div className="login-title">Welcome back</div>
-          <div className="login-sub">Sign in to your TalentAI workspace</div>
+        <div className="login-panel-inner">
+
+          {/* brand lockup */}
+          <div className="login-brandbar">
+            <div className="login-brandbar-logo"><GradientLogoMark /></div>
+            <div className="login-brandbar-name">TalentAI</div>
+          </div>
+
+          <div className="login-card">
+            <div className="login-eyebrow-pill">
+              <span className="login-eyebrow-dot" /> Secure workspace sign-in
+            </div>
+            <div className="login-title">Welcome back</div>
+            <div className="login-sub">Sign in to your TalentAI workspace</div>
 
           <form className="login-form" onSubmit={handleSubmit}>
             <div className="login-field">
@@ -167,6 +228,18 @@ export function LoginPage() {
               {loading ? "Signing in…" : "Sign in"}
             </button>
           </form>
+          </div>
+
+          {/* trust footer */}
+          <div className="login-footer">
+            <div className="login-footer-pills">
+              <span className="login-foot-pill"><LockIcon /> Encrypted</span>
+              <span className="login-foot-pill"><BoltIcon /> AI-Powered</span>
+              <span className="login-foot-pill">GPT-4o</span>
+            </div>
+            <div className="login-footer-copy">© 2026 TalentAI · Intelligent candidate search</div>
+          </div>
+
         </div>
       </div>
 
