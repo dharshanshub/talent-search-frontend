@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import type { ExtractedProfile, Seniority } from "../api/client";
 import { uploadResume, indexCandidate } from "../api/client";
+import { useToast } from "../context/ToastContext";
 
 interface Props { onClose: () => void; }
 
@@ -49,11 +50,27 @@ function XSmIcon() {
 }
 
 // ── tag-input helper ──────────────────────────────────────────────────────────
-function TagInput({ tags, onChange, placeholder, colorClass }: {
+// Chip palette — same family as the candidate-card skill chips for consistency
+const TAG_STYLES = [
+  { bg: "rgba(99,102,241,0.14)",  border: "rgba(99,102,241,0.3)",  color: "#a5b4fc" },
+  { bg: "rgba(52,211,153,0.12)",  border: "rgba(52,211,153,0.28)", color: "#6ee7b7" },
+  { bg: "rgba(251,191,36,0.12)",  border: "rgba(251,191,36,0.28)", color: "#fcd34d" },
+  { bg: "rgba(167,139,250,0.14)", border: "rgba(167,139,250,0.3)", color: "#c4b5fd" },
+  { bg: "rgba(34,211,238,0.12)",  border: "rgba(34,211,238,0.28)", color: "#67e8f9" },
+  { bg: "rgba(248,113,113,0.12)", border: "rgba(248,113,113,0.28)", color: "#fca5a5" },
+];
+
+// Deterministic avatar colour from name — matches CandidateCard behaviour
+const AVATAR_BG = [
+  "#4f46e5", "#7c3aed", "#0891b2", "#059669",
+  "#d97706", "#dc2626", "#db2777", "#2563eb",
+];
+const avatarBg = (name: string) => AVATAR_BG[(name.charCodeAt(0) || 0) % AVATAR_BG.length];
+
+function TagInput({ tags, onChange, placeholder }: {
   tags: string[];
   onChange: (t: string[]) => void;
   placeholder: string;
-  colorClass: string;
 }) {
   const [val, setVal] = useState("");
   const add = () => {
@@ -63,12 +80,15 @@ function TagInput({ tags, onChange, placeholder, colorClass }: {
   };
   return (
     <div className="sc-tag-wrap">
-      {tags.map((t) => (
-        <span key={t} className={`sc-tag ${colorClass}`}>
-          {t}
-          <button onClick={() => onChange(tags.filter((x) => x !== t))}><XSmIcon /></button>
-        </span>
-      ))}
+      {tags.map((t, i) => {
+        const s = TAG_STYLES[i % TAG_STYLES.length];
+        return (
+          <span key={t} className="sc-tag" style={{ background: s.bg, borderColor: s.border, color: s.color }}>
+            {t}
+            <button onClick={() => onChange(tags.filter((x) => x !== t))}><XSmIcon /></button>
+          </span>
+        );
+      })}
       <div className="sc-tag-input-row">
         <input
           className="sc-tag-input"
@@ -85,6 +105,7 @@ function TagInput({ tags, onChange, placeholder, colorClass }: {
 
 // ── main component ────────────────────────────────────────────────────────────
 export function ScreenDrawer({ onClose }: Props) {
+  const { toast } = useToast();
   const [step, setStep]               = useState<Step>("upload");
   const [dragging, setDragging]       = useState(false);
   const [fileName, setFileName]       = useState("");
@@ -128,6 +149,7 @@ export function ScreenDrawer({ onClose }: Props) {
       const res = await indexCandidate(candidateId, blobFilename, profile, rawText);
       setResult({ candidate_id: res.candidate_id, chunks: res.chunks_indexed });
       setStep("done");
+      toast(`${profile.name} added to the knowledge base`);
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Indexing failed");
     } finally {
@@ -241,7 +263,7 @@ export function ScreenDrawer({ onClose }: Props) {
           {step === "review" && profile && (
             <div className="sc-review-step">
               <div className="sc-review-banner">
-                <div className="sc-review-avatar" style={{ background: "#4f46e5" }}>
+                <div className="sc-review-avatar" style={{ background: avatarBg(profile.name) }}>
                   {profile.name.split(" ").map(w => w[0]).slice(0, 2).join("").toUpperCase()}
                 </div>
                 <div>
@@ -285,11 +307,11 @@ export function ScreenDrawer({ onClose }: Props) {
 
               <div className="sc-section-label">Skills</div>
               <TagInput tags={profile.skills} onChange={(t) => set("skills", t)}
-                placeholder="Add skill…" colorClass="sc-tag-indigo" />
+                placeholder="Add skill…" />
 
               <div className="sc-section-label">Industries</div>
               <TagInput tags={profile.industries} onChange={(t) => set("industries", t)}
-                placeholder="Add industry…" colorClass="sc-tag-violet" />
+                placeholder="Add industry…" />
 
               <div className="sc-section-label">Professional Summary</div>
               <textarea className="sc-summary"

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import type { CandidateMatch, ConversationMessage } from "../api/client";
 import { CandidateCard } from "./CandidateCard";
 import { MessageBubble } from "./MessageBubble";
+import { ProfileMenu } from "./ProfileMenu";
 import { ResumeDrawer } from "./ResumeDrawer";
 import { TypingIndicator } from "./TypingIndicator";
 import { useSearch } from "../hooks/useSearch";
@@ -66,15 +67,6 @@ function EmptyHeroIcon() {
       <circle cx="12" cy="20.5" r="1.6" fill="url(#heroGrad)"/>
       <circle cx="4" cy="16.2" r="1.6" fill="url(#heroGrad)"/>
       <circle cx="4" cy="7.8" r="1.6" fill="url(#heroGrad)"/>
-    </svg>
-  );
-}
-
-function BellIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-      <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-      <path d="M13.73 21a2 2 0 0 1-3.46 0" />
     </svg>
   );
 }
@@ -199,15 +191,9 @@ export function ChatWindow({ sessionId, initialMessages, onMessagesChange }: Pro
           </div>
         </div>
 
-        {/* right: actions + avatar */}
+        {/* right: profile */}
         <div className="chat-header-right">
-          <button className="chat-header-action-btn" title="Notifications">
-            <BellIcon />
-          </button>
-          <div className="chat-header-avatar">
-            <span>D</span>
-            <div className="chat-header-avatar-status" />
-          </div>
+          <ProfileMenu />
         </div>
       </header>
 

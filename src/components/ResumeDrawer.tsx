@@ -16,9 +16,9 @@ const initials = (name: string) =>
   name.split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase();
 
 function scoreScheme(score: number) {
-  if (score >= 0.82) return { bg: "#ecfdf5", border: "#a7f3d0", color: "#065f46", label: "Excellent" };
-  if (score >= 0.68) return { bg: "#fffbeb", border: "#fde68a", color: "#92400e", label: "Good" };
-  return { bg: "#eef2ff", border: "#c7d2fe", color: "#3730a3", label: "Fair" };
+  if (score >= 0.82) return { bg: "rgba(52,211,153,0.12)", border: "rgba(52,211,153,0.35)", color: "#6ee7b7", label: "Excellent" };
+  if (score >= 0.68) return { bg: "rgba(251,191,36,0.12)", border: "rgba(251,191,36,0.35)", color: "#fcd34d", label: "Good" };
+  return { bg: "rgba(129,140,248,0.12)", border: "rgba(129,140,248,0.35)", color: "#c4b5fd", label: "Fair" };
 }
 
 function CloseIcon() {
@@ -160,7 +160,19 @@ export function ResumeDrawer({ candidate, onClose }: Props) {
               title={`${candidate.name} Resume`}
             />
           ) : (
-            <div className="rd-loading">Loading resume…</div>
+            <div className="rd-skeleton">
+              <div className="rd-skel-page">
+                <div className="skel" style={{ width: "55%", height: 18, marginBottom: 18 }} />
+                <div className="skel" style={{ width: "35%", height: 11, marginBottom: 28 }} />
+                {[90, 100, 96, 84, 100, 92, 70].map((w, i) => (
+                  <div className="skel" key={i} style={{ width: `${w}%`, height: 10, marginBottom: 11 }} />
+                ))}
+                <div className="skel" style={{ width: "45%", height: 13, margin: "26px 0 14px" }} />
+                {[100, 94, 88].map((w, i) => (
+                  <div className="skel" key={`b${i}`} style={{ width: `${w}%`, height: 10, marginBottom: 11 }} />
+                ))}
+              </div>
+            </div>
           )}
         </div>
 
