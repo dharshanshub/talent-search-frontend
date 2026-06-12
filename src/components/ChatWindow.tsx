@@ -164,7 +164,9 @@ export function ChatWindow({ sessionId, initialMessages, onMessagesChange }: Pro
 
       {/* ── Header ───────────────────────────────── */}
       <header className="chat-header">
-        <div className="chat-header-running-line" />
+        <div className="chat-header-line-clip">
+          <div className="chat-header-running-line" />
+        </div>
 
         {/* left: logo + title */}
         <div className="chat-header-left">

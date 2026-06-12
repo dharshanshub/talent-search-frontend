@@ -556,7 +556,15 @@ html, body, #root {
   border-bottom: 1px solid rgba(255,255,255,0.06);
   flex-shrink: 0;
   position: relative;
+  /* no overflow:hidden here — it would clip the profile dropdown.
+     The running line clips inside .chat-header-line-clip instead. */
+  z-index: 50;
+}
+
+.chat-header-line-clip {
+  position: absolute; inset: 0;
   overflow: hidden;
+  pointer-events: none;
 }
 
 .chat-header::before {
@@ -1615,6 +1623,7 @@ html, body, #root {
   border-bottom: 1px solid rgba(255,255,255,.07);
   flex-shrink: 0;
   position: relative;
+  z-index: 50; /* keep the profile dropdown above sticky table headers */
 }
 
 .dash-header::before {
