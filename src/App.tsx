@@ -10,7 +10,7 @@ import { useChatHistory } from "./hooks/useChatHistory";
 type View = "chat" | "dashboard";
 
 export default function App() {
-  const { isAuthenticated, logout } = useAuth();
+  const { isAuthenticated } = useAuth();
 
   const {
     sessions,
@@ -56,7 +56,6 @@ export default function App() {
         onDelete={deleteSession}
         onScreen={() => setScreenOpen(true)}
         onViewChange={setView}
-        onLogout={logout}
       />
       {screenOpen && <ScreenDrawer onClose={() => setScreenOpen(false)} />}
       {view === "dashboard" ? (

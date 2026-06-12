@@ -7,6 +7,8 @@ import {
   type CandidateRecord,
   type KnowledgeBaseStats,
 } from "../api/client";
+import { ProfileMenu } from "./ProfileMenu";
+import { useToast } from "../context/ToastContext";
 
 const SENIORITY_COLORS: Record<string, string> = {
   Junior: "#10b981",
@@ -27,12 +29,74 @@ function formatDate(iso: string): string {
   }
 }
 
-function StatCard({ label, value, sub }: { label: string; value: string | number; sub?: string }) {
+function StatCard({ label, value, sub }: { label: string; value: React.ReactNode; sub?: string }) {
   return (
     <div className="dash-stat-card">
       <div className="dash-stat-value">{value}</div>
       <div className="dash-stat-label">{label}</div>
       {sub && <div className="dash-stat-sub">{sub}</div>}
+    </div>
+  );
+}
+
+/** Animates a number from 0 to its final value on mount (≈700 ms ease-out). */
+function CountUp({ value, decimals = 0, suffix = "" }: { value: number; decimals?: number; suffix?: string }) {
+  const [display, setDisplay] = useState(0);
+
+  useEffect(() => {
+    const duration = 700;
+    const start = performance.now();
+    let frame: number;
+    const tick = (now: number) => {
+      const t = Math.min((now - start) / duration, 1);
+      const eased = 1 - Math.pow(1 - t, 3); // cubic ease-out
+      setDisplay(value * eased);
+      if (t < 1) frame = requestAnimationFrame(tick);
+    };
+    frame = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frame);
+  }, [value]);
+
+  const formatted = decimals > 0
+    ? display.toFixed(decimals)
+    : Math.round(display).toLocaleString();
+  return <>{formatted}{suffix}</>;
+}
+
+/** Ghost stat cards shown while pool stats compute. */
+function StatsSkeleton() {
+  return (
+    <div className="dash-stats-row">
+      {[0, 1, 2, 3].map((i) => (
+        <div className="dash-stat-card" key={i}>
+          <div className="skel" style={{ width: i < 2 ? 72 : 120, height: 28, marginBottom: 10 }} />
+          <div className="skel" style={{ width: 100, height: 11, marginBottom: 8 }} />
+          <div className="skel" style={{ width: "80%", height: 10 }} />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/** Ghost table rows shown while the candidate page loads. */
+function TableSkeleton() {
+  return (
+    <div className="dash-table-wrap">
+      <div className="dash-skel-table">
+        {Array.from({ length: 8 }).map((_, i) => (
+          <div className="dash-skel-row" key={i} style={{ animationDelay: `${i * 70}ms` }}>
+            <div className="skel skel-circle" style={{ width: 30, height: 30, flexShrink: 0 }} />
+            <div style={{ flex: 1.4, display: "flex", flexDirection: "column", gap: 6 }}>
+              <div className="skel" style={{ width: "65%", height: 12 }} />
+              <div className="skel" style={{ width: "40%", height: 9 }} />
+            </div>
+            <div className="skel" style={{ flex: 1, height: 12 }} />
+            <div className="skel skel-pill" style={{ width: 70, height: 20, flexShrink: 0 }} />
+            <div className="skel" style={{ flex: 1.2, height: 12 }} />
+            <div className="skel" style={{ width: 90, height: 26, borderRadius: 7, flexShrink: 0 }} />
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -60,6 +124,8 @@ function DeleteConfirmModal({
 }
 
 export function DashboardPage() {
+  const { toast } = useToast();
+
   // ── Stats (separate, cached server-side) ─────────────────────────────────
   const [stats, setStats] = useState<KnowledgeBaseStats | null>(null);
   const [statsLoading, setStatsLoading] = useState(true);
@@ -230,8 +296,10 @@ export function DashboardPage() {
       // Decrement local total — server cache was invalidated by the delete endpoint
       setServerTotal((prev) => Math.max(0, prev - 1));
       setStats((prev) => prev ? { ...prev, total_profiles: Math.max(0, prev.total_profiles - 1) } : prev);
+      toast(`Removed ${deleteTarget.name} from the knowledge base`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Delete failed");
+      toast("Failed to remove candidate", "error");
     } finally {
       setDeleting(false);
       setDeleteTarget(null);
@@ -274,30 +342,30 @@ export function DashboardPage() {
               : "Manage your indexed talent pool"}
           </div>
         </div>
-        <button className="dash-refresh-btn" onClick={handleRefresh} disabled={pageLoading || statsLoading} title="Refresh">
-          <RefreshIcon spinning={pageLoading || statsLoading} />
-          Refresh
-        </button>
+        <div className="dash-header-right">
+          <button className="dash-refresh-btn" onClick={handleRefresh} disabled={pageLoading || statsLoading} title="Refresh">
+            <RefreshIcon spinning={pageLoading || statsLoading} />
+            Refresh
+          </button>
+          <ProfileMenu />
+        </div>
       </div>
 
       {error && <div className="dash-error">{error}</div>}
 
       {/* ── Stats row ──────────────────────────────────────────────────────── */}
       {statsLoading && !stats ? (
-        <div className="dash-stats-loading">
-          <div className="dash-spinner" style={{ width: 16, height: 16 }} />
-          Computing pool stats…
-        </div>
+        <StatsSkeleton />
       ) : stats ? (
         <div className="dash-stats-row">
           <StatCard
             label="Profiles in pool"
-            value={stats.total_profiles.toLocaleString()}
+            value={<CountUp value={stats.total_profiles} />}
             sub={stats.last_added_at ? `Last added ${formatDate(stats.last_added_at)}` : undefined}
           />
           <StatCard
             label="Avg. experience"
-            value={`${stats.avg_experience_years} yrs`}
+            value={<CountUp value={stats.avg_experience_years} decimals={1} suffix=" yrs" />}
             sub={stats.is_sampled ? "based on sample" : "across all profiles"}
           />
           <div className="dash-stat-card dash-seniority-card">
@@ -361,10 +429,7 @@ export function DashboardPage() {
 
       {/* ── Table ──────────────────────────────────────────────────────────── */}
       {pageLoading && records.length === 0 ? (
-        <div className="dash-loading">
-          <div className="dash-spinner" />
-          Loading candidates…
-        </div>
+        <TableSkeleton />
       ) : records.length === 0 && !pageLoading ? (
         <div className="dash-empty">
           <div className="dash-empty-icon"><DatabaseIcon /></div>
